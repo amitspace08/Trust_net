@@ -6,7 +6,7 @@ const HTML = `
 <!-- TopAppBar (From JSON) -->
 <header class="bg-surface w-full top-0 sticky flex justify-between items-center px-margin-mobile h-16 z-40 bg-surface-container flat no shadows">
 <div class="flex items-center gap-2">
-<div class="w-8 h-8 flex items-center justify-center">https://lh3.googleusercontent.com/aida/AP1WRLtS-f8DDELKHHtc55DJXlXw-V3jhkn3PmMgCXk-xoeLUSADStk_3qibog0sqDky_WOW4a17VPr_DFmtpsw4-PQ1WXJT68z1iZyQmQfewW8lFHZg3cca8-d6pZ0gVWtB35QWecBTzixeAWlppDBWE2lca3JMhLt-CWrL03oPQgzKLJWbcJ9Jxt85kilykIc-7fJrnkvStHpAjlbDv9EBCj5sn2WBbvurc_Ud4v3o7iCt2nlQxReVsA-KEnaP</div>
+<div class="w-8 h-8 flex items-center justify-center text-primary"><span class="material-symbols-outlined fill">shield_with_heart</span></div>
 <span class="font-headline-md text-headline-md font-bold text-primary tracking-tight">TrustNet</span>
 </div>
 <button class="hover:bg-surface-container-highest transition-colors active:scale-95 duration-100 p-2 rounded-full flex items-center justify-center text-on-surface-variant">
