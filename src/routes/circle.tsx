@@ -238,7 +238,5 @@ export const Route = createFileRoute("/circle")({
 });
 
 function Page() {
-  return (
-    <div className="bg-background text-on-background min-h-screen flex flex-col font-body-md antialiased md:flex-row" dangerouslySetInnerHTML={{ __html: HTML }} />
-  );
+  return <HtmlPage html={HTML} className="bg-background text-on-background min-h-screen flex flex-col font-body-md antialiased md:flex-row overflow-x-hidden pb-20 md:pb-0" />;
 }
