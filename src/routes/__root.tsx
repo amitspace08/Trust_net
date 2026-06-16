@@ -226,6 +226,8 @@ const TEXT_ROUTES: Array<[RegExp, string]> = [
   [/\bhome\b/i, "/"],
 ];
 
+const LOGOUT_RE = /\b(log\s*out|sign\s*out|logout|signout)\b/i;
+
 function isSosButton(el: Element | null): boolean {
   if (!el) return false;
   if ((el as HTMLElement).closest("nav[data-bottom-nav]")) return false;
