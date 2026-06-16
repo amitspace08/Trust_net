@@ -374,16 +374,31 @@ function SosHoldOverlay({
   );
 }
 
-function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
+const PUBLIC_PATHS = new Set(["/login", "/signup"]);
+
+function AuthGate() {
+  const { user, ready } = useAuth();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const router = useRouter();
   const [sosActive, setSosActive] = useState(false);
 
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#faf9fc]">
+        <div className="w-10 h-10 rounded-full border-4 border-[#0d631b]/20 border-t-[#0d631b] animate-spin" />
+      </div>
+    );
+  }
+
+  const isPublic = PUBLIC_PATHS.has(pathname);
+  if (!user && !isPublic) return <Navigate to="/login" />;
+  if (user && isPublic) return <Navigate to="/" />;
+
   return (
-    <QueryClientProvider client={queryClient}>
+    <>
       <ClickRouter onSosArm={() => setSosActive(true)} />
       <Outlet />
-      <BottomNav />
+      {user && <BottomNav />}
       <SosHoldOverlay
         active={sosActive}
         onCancel={() => setSosActive(false)}
@@ -392,6 +407,17 @@ function RootComponent() {
           router.navigate({ to: "/sos" });
         }}
       />
+    </>
+  );
+}
+
+function RootComponent() {
+  const { queryClient } = Route.useRouteContext();
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
