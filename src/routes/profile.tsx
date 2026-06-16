@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { HtmlPage } from "../lib/html-page";
 
 const HTML = `
 <!-- TopAppBar -->
