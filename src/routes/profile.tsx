@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { HtmlPage } from "../lib/html-page";
 
 const HTML = `
 <!-- TopAppBar -->
@@ -172,7 +173,5 @@ export const Route = createFileRoute("/profile")({
 });
 
 function Page() {
-  return (
-    <div className="bg-surface text-on-surface font-body-md min-h-screen flex flex-col antialiased" dangerouslySetInnerHTML={{ __html: HTML }} />
-  );
+  return <HtmlPage html={HTML} className="bg-surface text-on-surface font-body-md min-h-screen flex flex-col antialiased overflow-x-hidden pb-20 md:pb-0" />;
 }

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { HtmlPage } from "../lib/html-page";
 
 const HTML = `
 <!-- App Container -->
@@ -221,7 +222,5 @@ export const Route = createFileRoute("/guardian")({
 });
 
 function Page() {
-  return (
-    <div className="bg-surface text-on-surface font-body-md antialiased selection:bg-primary-container selection:text-on-primary-container" dangerouslySetInnerHTML={{ __html: HTML }} />
-  );
+  return <HtmlPage html={HTML} className="bg-surface text-on-surface font-body-md antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen overflow-x-hidden pb-20 md:pb-0" />;
 }

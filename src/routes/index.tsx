@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { HtmlPage } from "../lib/html-page";
 
 const HTML = `
 <!-- Navigation Drawer (Desktop) -->
@@ -202,7 +203,5 @@ export const Route = createFileRoute("/")({
 });
 
 function Page() {
-  return (
-    <div className="bg-background text-on-background font-body-md h-screen flex flex-col md:flex-row overflow-hidden" dangerouslySetInnerHTML={{ __html: HTML }} />
-  );
+  return <HtmlPage html={HTML} className="bg-background text-on-background font-body-md min-h-screen flex flex-col md:flex-row overflow-x-hidden pb-20 md:pb-0" />;
 }
