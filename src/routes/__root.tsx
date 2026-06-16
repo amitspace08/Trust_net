@@ -2,8 +2,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
+  Navigate,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -12,6 +14,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { AuthProvider, useAuth } from "../lib/auth";
 
 const TW_CONFIG = `tailwind.config = {
   darkMode: "class",
@@ -223,6 +226,8 @@ const TEXT_ROUTES: Array<[RegExp, string]> = [
   [/\bhome\b/i, "/"],
 ];
 
+const LOGOUT_RE = /\b(log\s*out|sign\s*out|logout|signout)\b/i;
+
 function isSosButton(el: Element | null): boolean {
   if (!el) return false;
   if ((el as HTMLElement).closest("nav[data-bottom-nav]")) return false;
@@ -234,6 +239,7 @@ const HOLD_MS = 1500;
 
 function ClickRouter({ onSosArm }: { onSosArm: () => void }) {
   const router = useRouter();
+  const { logout } = useAuth();
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
@@ -241,24 +247,38 @@ function ClickRouter({ onSosArm }: { onSosArm: () => void }) {
       const actionable = target.closest("button, a, [role='button']") as HTMLElement | null;
       if (!actionable) return;
       if (actionable.closest("nav[data-bottom-nav]")) return;
-      if (actionable.tagName === "A" && (actionable as HTMLAnchorElement).getAttribute("href")) return;
+      if (actionable.tagName === "A" && (actionable as HTMLAnchorElement).getAttribute("href") && (actionable as HTMLAnchorElement).getAttribute("href") !== "#") return;
       if (isSosButton(actionable)) {
         e.preventDefault();
+        return;
+      }
+
+      const text = (actionable.textContent || "").trim();
+      if (LOGOUT_RE.test(text)) {
+        e.preventDefault();
+        logout();
+        router.navigate({ to: "/login" });
         return;
       }
 
       const icons = actionable.querySelectorAll(".material-symbols-outlined");
       for (const icon of Array.from(icons)) {
         const name = (icon.textContent || "").trim().toLowerCase();
+        if (name === "logout") {
+          e.preventDefault();
+          logout();
+          router.navigate({ to: "/login" });
+          return;
+        }
         if (ICON_ROUTES[name]) {
           e.preventDefault();
           router.navigate({ to: ICON_ROUTES[name] });
           return;
         }
       }
-      const text = (actionable.textContent || "").trim().toLowerCase();
+      const lower = text.toLowerCase();
       for (const [re, to] of TEXT_ROUTES) {
-        if (re.test(text)) {
+        if (re.test(lower)) {
           e.preventDefault();
           router.navigate({ to });
           return;
@@ -276,7 +296,7 @@ function ClickRouter({ onSosArm }: { onSosArm: () => void }) {
       document.removeEventListener("click", handler);
       document.removeEventListener("pointerdown", down);
     };
-  }, [router, onSosArm]);
+  }, [router, onSosArm, logout]);
   return null;
 }
 
@@ -354,16 +374,31 @@ function SosHoldOverlay({
   );
 }
 
-function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
+const PUBLIC_PATHS = new Set(["/login", "/signup"]);
+
+function AuthGate() {
+  const { user, ready } = useAuth();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const router = useRouter();
   const [sosActive, setSosActive] = useState(false);
 
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#faf9fc]">
+        <div className="w-10 h-10 rounded-full border-4 border-[#0d631b]/20 border-t-[#0d631b] animate-spin" />
+      </div>
+    );
+  }
+
+  const isPublic = PUBLIC_PATHS.has(pathname);
+  if (!user && !isPublic) return <Navigate to="/login" />;
+  if (user && isPublic) return <Navigate to="/" />;
+
   return (
-    <QueryClientProvider client={queryClient}>
+    <>
       <ClickRouter onSosArm={() => setSosActive(true)} />
       <Outlet />
-      <BottomNav />
+      {user && <BottomNav />}
       <SosHoldOverlay
         active={sosActive}
         onCancel={() => setSosActive(false)}
@@ -372,6 +407,17 @@ function RootComponent() {
           router.navigate({ to: "/sos" });
         }}
       />
+    </>
+  );
+}
+
+function RootComponent() {
+  const { queryClient } = Route.useRouteContext();
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
