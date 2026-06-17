@@ -23,19 +23,71 @@ import { Route as CheckInRouteImport } from './routes/check-in'
 import { Route as AddContactRouteImport } from './routes/add-contact'
 import { Route as IndexRouteImport } from './routes/index'
 
-const SosRoute = SosRouteImport.update({ id: '/sos', path: '/sos', getParentRoute: () => rootRouteImport } as any)
-const SignupRoute = SignupRouteImport.update({ id: '/signup', path: '/signup', getParentRoute: () => rootRouteImport } as any)
-const SettingsRoute = SettingsRouteImport.update({ id: '/settings', path: '/settings', getParentRoute: () => rootRouteImport } as any)
-const ReportRoute = ReportRouteImport.update({ id: '/report', path: '/report', getParentRoute: () => rootRouteImport } as any)
-const ProfileRoute = ProfileRouteImport.update({ id: '/profile', path: '/profile', getParentRoute: () => rootRouteImport } as any)
-const NotificationsRoute = NotificationsRouteImport.update({ id: '/notifications', path: '/notifications', getParentRoute: () => rootRouteImport } as any)
-const LoginRoute = LoginRouteImport.update({ id: '/login', path: '/login', getParentRoute: () => rootRouteImport } as any)
-const HeatmapRoute = HeatmapRouteImport.update({ id: '/heatmap', path: '/heatmap', getParentRoute: () => rootRouteImport } as any)
-const GuardianRoute = GuardianRouteImport.update({ id: '/guardian', path: '/guardian', getParentRoute: () => rootRouteImport } as any)
-const CircleRoute = CircleRouteImport.update({ id: '/circle', path: '/circle', getParentRoute: () => rootRouteImport } as any)
-const CheckInRoute = CheckInRouteImport.update({ id: '/check-in', path: '/check-in', getParentRoute: () => rootRouteImport } as any)
-const AddContactRoute = AddContactRouteImport.update({ id: '/add-contact', path: '/add-contact', getParentRoute: () => rootRouteImport } as any)
-const IndexRoute = IndexRouteImport.update({ id: '/', path: '/', getParentRoute: () => rootRouteImport } as any)
+const SosRoute = SosRouteImport.update({
+  id: '/sos',
+  path: '/sos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HeatmapRoute = HeatmapRouteImport.update({
+  id: '/heatmap',
+  path: '/heatmap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuardianRoute = GuardianRouteImport.update({
+  id: '/guardian',
+  path: '/guardian',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CircleRoute = CircleRouteImport.update({
+  id: '/circle',
+  path: '/circle',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckInRoute = CheckInRouteImport.update({
+  id: '/check-in',
+  path: '/check-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AddContactRoute = AddContactRouteImport.update({
+  id: '/add-contact',
+  path: '/add-contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -52,14 +104,83 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/sos': typeof SosRoute
 }
-export interface FileRoutesByTo extends FileRoutesByFullPath {}
-export interface FileRoutesById extends FileRoutesByFullPath { __root__: typeof rootRouteImport }
+export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/add-contact': typeof AddContactRoute
+  '/check-in': typeof CheckInRoute
+  '/circle': typeof CircleRoute
+  '/guardian': typeof GuardianRoute
+  '/heatmap': typeof HeatmapRoute
+  '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
+  '/profile': typeof ProfileRoute
+  '/report': typeof ReportRoute
+  '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
+  '/sos': typeof SosRoute
+}
+export interface FileRoutesById {
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/add-contact': typeof AddContactRoute
+  '/check-in': typeof CheckInRoute
+  '/circle': typeof CircleRoute
+  '/guardian': typeof GuardianRoute
+  '/heatmap': typeof HeatmapRoute
+  '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
+  '/profile': typeof ProfileRoute
+  '/report': typeof ReportRoute
+  '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
+  '/sos': typeof SosRoute
+}
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/add-contact' | '/check-in' | '/circle' | '/guardian' | '/heatmap' | '/login' | '/notifications' | '/profile' | '/report' | '/settings' | '/signup' | '/sos'
+  fullPaths:
+    | '/'
+    | '/add-contact'
+    | '/check-in'
+    | '/circle'
+    | '/guardian'
+    | '/heatmap'
+    | '/login'
+    | '/notifications'
+    | '/profile'
+    | '/report'
+    | '/settings'
+    | '/signup'
+    | '/sos'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/add-contact' | '/check-in' | '/circle' | '/guardian' | '/heatmap' | '/login' | '/notifications' | '/profile' | '/report' | '/settings' | '/signup' | '/sos'
-  id: '__root__' | '/' | '/add-contact' | '/check-in' | '/circle' | '/guardian' | '/heatmap' | '/login' | '/notifications' | '/profile' | '/report' | '/settings' | '/signup' | '/sos'
+  to:
+    | '/'
+    | '/add-contact'
+    | '/check-in'
+    | '/circle'
+    | '/guardian'
+    | '/heatmap'
+    | '/login'
+    | '/notifications'
+    | '/profile'
+    | '/report'
+    | '/settings'
+    | '/signup'
+    | '/sos'
+  id:
+    | '__root__'
+    | '/'
+    | '/add-contact'
+    | '/check-in'
+    | '/circle'
+    | '/guardian'
+    | '/heatmap'
+    | '/login'
+    | '/notifications'
+    | '/profile'
+    | '/report'
+    | '/settings'
+    | '/signup'
+    | '/sos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -80,24 +201,114 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sos': { id: '/sos'; path: '/sos'; fullPath: '/sos'; preLoaderRoute: typeof SosRouteImport; parentRoute: typeof rootRouteImport }
-    '/signup': { id: '/signup'; path: '/signup'; fullPath: '/signup'; preLoaderRoute: typeof SignupRouteImport; parentRoute: typeof rootRouteImport }
-    '/settings': { id: '/settings'; path: '/settings'; fullPath: '/settings'; preLoaderRoute: typeof SettingsRouteImport; parentRoute: typeof rootRouteImport }
-    '/report': { id: '/report'; path: '/report'; fullPath: '/report'; preLoaderRoute: typeof ReportRouteImport; parentRoute: typeof rootRouteImport }
-    '/profile': { id: '/profile'; path: '/profile'; fullPath: '/profile'; preLoaderRoute: typeof ProfileRouteImport; parentRoute: typeof rootRouteImport }
-    '/notifications': { id: '/notifications'; path: '/notifications'; fullPath: '/notifications'; preLoaderRoute: typeof NotificationsRouteImport; parentRoute: typeof rootRouteImport }
-    '/login': { id: '/login'; path: '/login'; fullPath: '/login'; preLoaderRoute: typeof LoginRouteImport; parentRoute: typeof rootRouteImport }
-    '/heatmap': { id: '/heatmap'; path: '/heatmap'; fullPath: '/heatmap'; preLoaderRoute: typeof HeatmapRouteImport; parentRoute: typeof rootRouteImport }
-    '/guardian': { id: '/guardian'; path: '/guardian'; fullPath: '/guardian'; preLoaderRoute: typeof GuardianRouteImport; parentRoute: typeof rootRouteImport }
-    '/circle': { id: '/circle'; path: '/circle'; fullPath: '/circle'; preLoaderRoute: typeof CircleRouteImport; parentRoute: typeof rootRouteImport }
-    '/check-in': { id: '/check-in'; path: '/check-in'; fullPath: '/check-in'; preLoaderRoute: typeof CheckInRouteImport; parentRoute: typeof rootRouteImport }
-    '/add-contact': { id: '/add-contact'; path: '/add-contact'; fullPath: '/add-contact'; preLoaderRoute: typeof AddContactRouteImport; parentRoute: typeof rootRouteImport }
-    '/': { id: '/'; path: '/'; fullPath: '/'; preLoaderRoute: typeof IndexRouteImport; parentRoute: typeof rootRouteImport }
+    '/sos': {
+      id: '/sos'
+      path: '/sos'
+      fullPath: '/sos'
+      preLoaderRoute: typeof SosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/heatmap': {
+      id: '/heatmap'
+      path: '/heatmap'
+      fullPath: '/heatmap'
+      preLoaderRoute: typeof HeatmapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guardian': {
+      id: '/guardian'
+      path: '/guardian'
+      fullPath: '/guardian'
+      preLoaderRoute: typeof GuardianRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/circle': {
+      id: '/circle'
+      path: '/circle'
+      fullPath: '/circle'
+      preLoaderRoute: typeof CircleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/check-in': {
+      id: '/check-in'
+      path: '/check-in'
+      fullPath: '/check-in'
+      preLoaderRoute: typeof CheckInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/add-contact': {
+      id: '/add-contact'
+      path: '/add-contact'
+      fullPath: '/add-contact'
+      preLoaderRoute: typeof AddContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute, AddContactRoute, CheckInRoute, CircleRoute, GuardianRoute, HeatmapRoute, LoginRoute, NotificationsRoute, ProfileRoute, ReportRoute, SettingsRoute, SignupRoute, SosRoute,
+  IndexRoute: IndexRoute,
+  AddContactRoute: AddContactRoute,
+  CheckInRoute: CheckInRoute,
+  CircleRoute: CircleRoute,
+  GuardianRoute: GuardianRoute,
+  HeatmapRoute: HeatmapRoute,
+  LoginRoute: LoginRoute,
+  NotificationsRoute: NotificationsRoute,
+  ProfileRoute: ProfileRoute,
+  ReportRoute: ReportRoute,
+  SettingsRoute: SettingsRoute,
+  SignupRoute: SignupRoute,
+  SosRoute: SosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
