@@ -11,11 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SosRouteImport } from './routes/sos'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ReportRouteImport } from './routes/report'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HeatmapRouteImport } from './routes/heatmap'
 import { Route as GuardianRouteImport } from './routes/guardian'
 import { Route as CircleRouteImport } from './routes/circle'
+import { Route as CheckInRouteImport } from './routes/check-in'
+import { Route as AddContactRouteImport } from './routes/add-contact'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SosRoute = SosRouteImport.update({
@@ -28,9 +33,24 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -53,6 +73,16 @@ const CircleRoute = CircleRouteImport.update({
   path: '/circle',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckInRoute = CheckInRouteImport.update({
+  id: '/check-in',
+  path: '/check-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AddContactRoute = AddContactRouteImport.update({
+  id: '/add-contact',
+  path: '/add-contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -61,32 +91,47 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/add-contact': typeof AddContactRoute
+  '/check-in': typeof CheckInRoute
   '/circle': typeof CircleRoute
   '/guardian': typeof GuardianRoute
   '/heatmap': typeof HeatmapRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
+  '/report': typeof ReportRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/sos': typeof SosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/add-contact': typeof AddContactRoute
+  '/check-in': typeof CheckInRoute
   '/circle': typeof CircleRoute
   '/guardian': typeof GuardianRoute
   '/heatmap': typeof HeatmapRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
+  '/report': typeof ReportRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/sos': typeof SosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/add-contact': typeof AddContactRoute
+  '/check-in': typeof CheckInRoute
   '/circle': typeof CircleRoute
   '/guardian': typeof GuardianRoute
   '/heatmap': typeof HeatmapRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
+  '/report': typeof ReportRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/sos': typeof SosRoute
 }
@@ -94,42 +139,62 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/add-contact'
+    | '/check-in'
     | '/circle'
     | '/guardian'
     | '/heatmap'
     | '/login'
+    | '/notifications'
     | '/profile'
+    | '/report'
+    | '/settings'
     | '/signup'
     | '/sos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/add-contact'
+    | '/check-in'
     | '/circle'
     | '/guardian'
     | '/heatmap'
     | '/login'
+    | '/notifications'
     | '/profile'
+    | '/report'
+    | '/settings'
     | '/signup'
     | '/sos'
   id:
     | '__root__'
     | '/'
+    | '/add-contact'
+    | '/check-in'
     | '/circle'
     | '/guardian'
     | '/heatmap'
     | '/login'
+    | '/notifications'
     | '/profile'
+    | '/report'
+    | '/settings'
     | '/signup'
     | '/sos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AddContactRoute: typeof AddContactRoute
+  CheckInRoute: typeof CheckInRoute
   CircleRoute: typeof CircleRoute
   GuardianRoute: typeof GuardianRoute
   HeatmapRoute: typeof HeatmapRoute
   LoginRoute: typeof LoginRoute
+  NotificationsRoute: typeof NotificationsRoute
   ProfileRoute: typeof ProfileRoute
+  ReportRoute: typeof ReportRoute
+  SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   SosRoute: typeof SosRoute
 }
@@ -150,11 +215,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -185,6 +271,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CircleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/check-in': {
+      id: '/check-in'
+      path: '/check-in'
+      fullPath: '/check-in'
+      preLoaderRoute: typeof CheckInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/add-contact': {
+      id: '/add-contact'
+      path: '/add-contact'
+      fullPath: '/add-contact'
+      preLoaderRoute: typeof AddContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -197,11 +297,16 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AddContactRoute: AddContactRoute,
+  CheckInRoute: CheckInRoute,
   CircleRoute: CircleRoute,
   GuardianRoute: GuardianRoute,
   HeatmapRoute: HeatmapRoute,
   LoginRoute: LoginRoute,
+  NotificationsRoute: NotificationsRoute,
   ProfileRoute: ProfileRoute,
+  ReportRoute: ReportRoute,
+  SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   SosRoute: SosRoute,
 }
