@@ -361,27 +361,52 @@ function SosHoldOverlay({
   const seconds = Math.max(0, Math.ceil((1 - progress) * (HOLD_MS / 1000)));
   return (
     <div
-      className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm select-none"
+      className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm select-none animate-fade-in"
       style={{ touchAction: "none" }}
     >
-      <div className="relative w-48 h-48">
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
-          <circle cx="80" cy="80" r={r} stroke="rgba(255,255,255,0.2)" strokeWidth="10" fill="none" />
+      <div className="relative w-52 h-52">
+        {/* Pulsing outer ring */}
+        <span className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
+        <span className="absolute inset-2 rounded-full bg-red-500/10 animate-pulse" />
+
+        {/* Progress ring */}
+        <svg className="w-full h-full -rotate-90 relative" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r={r} stroke="rgba(255,255,255,0.15)" strokeWidth="10" fill="none" />
           <circle
             cx="80" cy="80" r={r}
             stroke="#ef4444" strokeWidth="10" fill="none" strokeLinecap="round"
             strokeDasharray={c}
             strokeDashoffset={c * (1 - progress)}
-            style={{ transition: "stroke-dashoffset 60ms linear" }}
+            style={{ transition: "stroke-dashoffset 60ms linear", filter: "drop-shadow(0 0 8px rgba(239,68,68,0.7))" }}
           />
         </svg>
+
+        {/* Spinner loader */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div
+            className="absolute w-32 h-32 rounded-full border-2 border-transparent border-t-white/80 border-r-white/40 animate-spin"
+            style={{ animationDuration: "0.9s" }}
+          />
+        </div>
+
+        {/* Center content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-          <span className="text-5xl font-extrabold tracking-widest">{seconds}</span>
-          <span className="text-xs uppercase tracking-[0.2em] mt-1">Hold</span>
+          <span className="material-symbols-outlined text-red-400" style={{ fontSize: 36 }}>sos</span>
+          <span className="text-5xl font-extrabold tracking-widest mt-1">{seconds}</span>
+          <span className="text-[10px] uppercase tracking-[0.3em] mt-1 text-white/70">Hold</span>
         </div>
       </div>
-      <p className="text-white/90 text-sm mt-6 font-medium tracking-wide uppercase">
-        Keep holding to activate SOS
+
+      {/* Linear loader bar */}
+      <div className="mt-8 w-56 h-1.5 rounded-full bg-white/15 overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-red-500 to-red-300 rounded-full"
+          style={{ width: `${progress * 100}%`, transition: "width 60ms linear" }}
+        />
+      </div>
+
+      <p className="text-white/90 text-sm mt-5 font-semibold tracking-wide uppercase">
+        Activating SOS…
       </p>
       <p className="text-white/60 text-xs mt-1">Release to cancel</p>
     </div>
