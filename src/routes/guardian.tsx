@@ -15,7 +15,7 @@ const HTML = `
 </button>
 </header>
 <!-- Main Content Canvas -->
-<main class="flex-1 overflow-y-auto px-margin-mobile flex flex-col gap-stack-gap pt-4 pb-8">
+<main class="flex-1 overflow-y-auto px-margin-mobile flex flex-col gap-stack-gap pt-4 pb-64">
 <!-- Page Header -->
 <div>
 <h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Guardian Angel</h1>
