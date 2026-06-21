@@ -3,9 +3,35 @@ import { HtmlPage } from "../lib/html-page";
 
 const HTML = `
 <!-- App Container -->
-<div class="max-w-md mx-auto w-full min-h-screen relative flex flex-col pb-24 shadow-2xl bg-surface-bright overflow-hidden">
+<div class="w-full min-h-screen relative flex flex-col md:flex-row pb-24 md:pb-0 bg-surface-bright">
+<!-- NavigationDrawer (Web Only) -->
+<nav class="hidden md:flex flex-col bg-surface dark:bg-surface-dim text-primary dark:text-primary-fixed h-full rounded-r-xl shadow-lg dark:shadow-none transition-all duration-200 ease-in-out w-72 max-w-[80vw] p-4 fixed left-0 top-0 z-50">
+<div class="flex items-center gap-4 mb-8 pt-4">
+<img alt="User Profile" class="w-12 h-12 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBx1s7cKAePJFBmHojTu4cZFC5UuKj7jy18bCo1PM4SW_Vq5HYCCIWn0KyQnEhANOITgjZ26GcVwUeRHxoReatAnGazD1zxMKBI_VAR8nw3wmyMACxViNWxxjWKsY65vV9JapMbu3sUJ8E_GtOE9bhZVbsq_BDxFZWuatWbgXcZTrsz4dLzZ3Y_CsHGbVN-qt2bFi2MogcVI7L3uTSjiqjH2qo_WG1uJvJ8opyJqJ1uc15T-26Wlw-qNL4n_tMsUpUtWgG0AQUkufcK">
+<div>
+<h2 class="font-title-lg text-title-lg text-primary">User Name</h2>
+<p class="font-label-md text-label-md text-on-surface-variant">Safety Status: Protected</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Trust Score: 98</p>
+</div>
+</div>
+<ul class="flex flex-col gap-2">
+<li><a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all font-label-lg text-label-lg" href="#"><span class="material-symbols-outlined">settings_ethernet</span>Emergency Settings</a></li>
+<li><a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all font-label-lg text-label-lg" href="#"><span class="material-symbols-outlined">history</span>Safety History</a></li>
+<li><a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all font-label-lg text-label-lg" href="#"><span class="material-symbols-outlined">privacy_tip</span>Privacy Guard</a></li>
+<li><a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all font-label-lg text-label-lg" href="#"><span class="material-symbols-outlined">help</span>Support</a></li>
+</ul>
+<div class="mt-auto">
+<ul class="flex flex-col gap-2">
+<li><a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all font-label-lg text-label-lg" href="#"><span class="material-symbols-outlined">home</span>Home</a></li>
+<li><a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all font-label-lg text-label-lg" href="#"><span class="material-symbols-outlined">map</span>Heatmap</a></li>
+<li><a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all font-label-lg text-label-lg" href="#"><span class="material-symbols-outlined">group</span>Circle</a></li>
+<li><a class="flex items-center gap-3 px-4 py-3 rounded-full bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary font-bold font-label-lg text-label-lg" href="#"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">security</span>Guardian</a></li>
+<li><a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all font-label-lg text-label-lg" href="#"><span class="material-symbols-outlined">person</span>Profile</a></li>
+</ul>
+</div>
+</nav>
 <!-- TopAppBar (From JSON) -->
-<header class="bg-surface w-full top-0 sticky flex justify-between items-center px-margin-mobile h-16 z-40 bg-surface-container flat no shadows">
+<header class="bg-surface w-full top-0 sticky flex justify-between items-center px-margin-mobile h-16 z-40 bg-surface-container flat no shadows md:hidden">
 <div class="flex items-center gap-2">
 <div class="w-8 h-8 flex items-center justify-center text-primary"><span class="material-symbols-outlined fill">shield_with_heart</span></div>
 <span class="font-headline-md text-headline-md font-bold text-primary tracking-tight">TrustNet</span>
@@ -15,7 +41,7 @@ const HTML = `
 </button>
 </header>
 <!-- Main Content Canvas -->
-<main class="flex-1 overflow-y-auto px-margin-mobile flex flex-col gap-stack-gap pt-4 pb-64">
+<main class="flex-1 w-full max-w-4xl mx-auto px-margin-mobile md:px-margin-tablet py-6 md:ml-72 pb-64 md:pb-6 flex flex-col gap-stack-gap">
 <!-- Page Header -->
 <div>
 <h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Guardian Angel</h1>
@@ -168,11 +194,8 @@ const HTML = `
 </div>
 </div>
 </section>
-<!-- Actions Area (Spacing for scroll clearance) -->
-<div class="h-4"></div>
-</main>
 <!-- Floating CTAs (Pinned above nav) -->
-<div class="absolute bottom-24 left-0 w-full px-margin-mobile flex flex-col gap-3 z-30 bg-gradient-to-t from-surface-bright via-surface-bright to-transparent pt-6 pb-2">
+<div class="absolute bottom-24 md:relative md:bottom-auto md:left-auto md:w-auto md:bg-none md:p-0 md:pt-4 md:mt-4 left-0 w-full px-margin-mobile flex flex-col gap-3 z-30 bg-gradient-to-t from-surface-bright via-surface-bright to-transparent pt-6 pb-2">
 <button class="w-full bg-primary text-on-primary font-title-lg text-title-lg py-4 rounded-full shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-surface-tint">
 <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">sos</span>
                 Request Help Now
@@ -181,8 +204,11 @@ const HTML = `
                 Become a Guardian Angel
             </button>
 </div>
+<!-- Actions Area (Spacing for scroll clearance) -->
+<div class="h-4"></div>
+</main>
 <!-- BottomNavBar (From JSON) -->
-<nav class="fixed bottom-0 w-full max-w-md z-50 rounded-t-xl bg-surface-container-lowest flex justify-around items-center h-20 px-2 pb-safe shadow-sm border-t border-surface-container-lowest">
+<nav class="fixed bottom-0 w-full max-w-md z-50 rounded-t-xl bg-surface-container-lowest flex justify-around items-center h-20 px-2 pb-safe shadow-sm border-t border-surface-container-lowest md:hidden">
 <!-- Home (Inactive) -->
 <button class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 hover:bg-surface-container-high active:scale-90 transition-transform rounded-xl">
 <span class="material-symbols-outlined">home</span>
@@ -222,5 +248,5 @@ export const Route = createFileRoute("/guardian")({
 });
 
 function Page() {
-  return <HtmlPage html={HTML} className="bg-surface text-on-surface font-body-md antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen overflow-x-hidden pb-20 md:pb-0" />;
+  return <HtmlPage html={HTML} className="bg-surface text-on-surface font-body-md antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen flex flex-col md:flex-row overflow-x-hidden pb-20 md:pb-0" />;
 }

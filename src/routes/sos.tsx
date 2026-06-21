@@ -158,37 +158,10 @@ const HTML = `
 <div class="fixed bottom-0 left-0 w-full p-margin-mobile bg-gradient-to-t from-surface via-surface to-transparent pt-12 z-40 pb-safe flex justify-center">
 <button class="w-full max-w-md bg-surface-container-highest hover:bg-surface-variant text-on-surface font-title-lg text-title-lg py-4 rounded-full shadow-lg border-2 border-outline-variant transition-all active:scale-95 flex items-center justify-center gap-2 uppercase tracking-wide">
 <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">cancel</span>
-            I AM SAFE — CANCEL
+            I AM SAFE — CANCEL SOS
         </button>
 </div>
-<script>
-        // Simple JS for visual feedback on timer (mocking the interaction)
-        document.addEventListener('DOMContentLoaded', () => {
-            let count = 5;
-            const timerEl = document.getElementById('countdown-timer');
-            
-            const interval = setInterval(() => {
-                count--;
-                if(count >= 0) {
-                    timerEl.textContent = count;
-                }
-                if(count === 0) {
-                    timerEl.textContent = "SOS";
-                    clearInterval(interval);
-                }
-            }, 1000);
 
-            // Escalation timer mock
-            let escCount = 72;
-            const escTimerEl = document.getElementById('escalation-timer');
-            setInterval(() => {
-                escCount--;
-                if(escCount >= 0) {
-                    escTimerEl.textContent = escCount;
-                }
-            }, 1000);
-        });
-    </script>
 `;
 
 export const Route = createFileRoute("/sos")({
@@ -200,6 +173,56 @@ export const Route = createFileRoute("/sos")({
   component: Page,
 });
 
+import { useEffect } from "react";
+
 function Page() {
+  useEffect(() => {
+    let count = 5;
+    const timerEl = document.getElementById("countdown-timer");
+    const progressCircle = document.getElementById("progress-circle");
+    
+    // Circumference of circle with r=46% on a 160px container is:
+    // Radius = 160 * 0.46 = 73.6px.
+    // Circumference = 2 * Math.PI * 73.6 = 462.44
+    const circumference = 2 * Math.PI * 73.6;
+
+    if (progressCircle) {
+      progressCircle.style.strokeDasharray = `${circumference}`;
+      progressCircle.style.strokeDashoffset = "0";
+    }
+
+    const interval = setInterval(() => {
+      count--;
+      if (count >= 0) {
+        if (timerEl) timerEl.textContent = `${count}`;
+        if (progressCircle) {
+          const offset = circumference * (1 - count / 5);
+          progressCircle.style.strokeDashoffset = `${offset}`;
+        }
+      }
+      if (count === 0) {
+        if (timerEl) timerEl.textContent = "SOS";
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    // Escalation timer
+    let escCount = 72;
+    const escTimerEl = document.getElementById("escalation-timer");
+    const escInterval = setInterval(() => {
+      escCount--;
+      if (escCount >= 0) {
+        if (escTimerEl) escTimerEl.textContent = `${escCount}`;
+      } else {
+        clearInterval(escInterval);
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(escInterval);
+    };
+  }, []);
+
   return <HtmlPage html={HTML} className="bg-surface text-on-surface font-body-md min-h-screen flex flex-col antialiased overflow-x-hidden pb-20 md:pb-0" />;
 }

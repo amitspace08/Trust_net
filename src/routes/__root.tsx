@@ -13,7 +13,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider, useAuth } from "../lib/auth";
 
 const TW_CONFIG = `tailwind.config = {
@@ -112,7 +111,7 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    console.error(error);
   }, [error]);
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
@@ -215,6 +214,10 @@ const ICON_ROUTES: Record<string, string> = {
   person: "/profile",
   account_circle: "/profile",
   settings: "/settings",
+  settings_ethernet: "/settings",
+  history: "/history",
+  privacy_tip: "/privacy",
+  help: "/support",
   notifications: "/notifications",
   notifications_active: "/notifications",
   report: "/report",
@@ -237,6 +240,9 @@ const TEXT_ROUTES: Array<[RegExp, string]> = [
   [/\bcircle\b/i, "/circle"],
   [/\bguardian\b/i, "/guardian"],
   [/\bprofile\b/i, "/profile"],
+  [/\bhistory\b/i, "/history"],
+  [/\bprivacy\b/i, "/privacy"],
+  [/\bsupport\b|\bhelp\b/i, "/support"],
   [/\bhome\b/i, "/"],
 ];
 
@@ -375,9 +381,9 @@ function SosHoldOverlay({
           <circle
             cx="80" cy="80" r={r}
             stroke="#ef4444" strokeWidth="10" fill="none" strokeLinecap="round"
-            strokeDasharray={c}
-            strokeDashoffset={c * (1 - progress)}
-            style={{ transition: "stroke-dashoffset 60ms linear", filter: "drop-shadow(0 0 8px rgba(239,68,68,0.7))" }}
+            strokeDasharray={Math.round(c)}
+            strokeDashoffset={Math.round(c * (1 - progress))}
+            style={{ transition: "stroke-dashoffset 60ms linear" }}
           />
         </svg>
 
@@ -400,7 +406,7 @@ function SosHoldOverlay({
       {/* Linear loader bar */}
       <div className="mt-8 w-56 h-1.5 rounded-full bg-white/15 overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-red-500 to-red-300 rounded-full"
+          className="h-full bg-[#ef4444] rounded-full"
           style={{ width: `${progress * 100}%`, transition: "width 60ms linear" }}
         />
       </div>

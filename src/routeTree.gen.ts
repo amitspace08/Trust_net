@@ -9,13 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as SosRouteImport } from './routes/sos'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HistoryRouteImport } from './routes/history'
 import { Route as HeatmapRouteImport } from './routes/heatmap'
 import { Route as GuardianRouteImport } from './routes/guardian'
 import { Route as CircleRouteImport } from './routes/circle'
@@ -23,6 +26,11 @@ import { Route as CheckInRouteImport } from './routes/check-in'
 import { Route as AddContactRouteImport } from './routes/add-contact'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SosRoute = SosRouteImport.update({
   id: '/sos',
   path: '/sos',
@@ -48,6 +56,11 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -56,6 +69,11 @@ const NotificationsRoute = NotificationsRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HeatmapRoute = HeatmapRouteImport.update({
@@ -96,13 +114,16 @@ export interface FileRoutesByFullPath {
   '/circle': typeof CircleRoute
   '/guardian': typeof GuardianRoute
   '/heatmap': typeof HeatmapRoute
+  '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/report': typeof ReportRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/sos': typeof SosRoute
+  '/support': typeof SupportRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -111,13 +132,16 @@ export interface FileRoutesByTo {
   '/circle': typeof CircleRoute
   '/guardian': typeof GuardianRoute
   '/heatmap': typeof HeatmapRoute
+  '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/report': typeof ReportRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/sos': typeof SosRoute
+  '/support': typeof SupportRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -127,13 +151,16 @@ export interface FileRoutesById {
   '/circle': typeof CircleRoute
   '/guardian': typeof GuardianRoute
   '/heatmap': typeof HeatmapRoute
+  '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/report': typeof ReportRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/sos': typeof SosRoute
+  '/support': typeof SupportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -144,13 +171,16 @@ export interface FileRouteTypes {
     | '/circle'
     | '/guardian'
     | '/heatmap'
+    | '/history'
     | '/login'
     | '/notifications'
+    | '/privacy'
     | '/profile'
     | '/report'
     | '/settings'
     | '/signup'
     | '/sos'
+    | '/support'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -159,13 +189,16 @@ export interface FileRouteTypes {
     | '/circle'
     | '/guardian'
     | '/heatmap'
+    | '/history'
     | '/login'
     | '/notifications'
+    | '/privacy'
     | '/profile'
     | '/report'
     | '/settings'
     | '/signup'
     | '/sos'
+    | '/support'
   id:
     | '__root__'
     | '/'
@@ -174,13 +207,16 @@ export interface FileRouteTypes {
     | '/circle'
     | '/guardian'
     | '/heatmap'
+    | '/history'
     | '/login'
     | '/notifications'
+    | '/privacy'
     | '/profile'
     | '/report'
     | '/settings'
     | '/signup'
     | '/sos'
+    | '/support'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -190,17 +226,27 @@ export interface RootRouteChildren {
   CircleRoute: typeof CircleRoute
   GuardianRoute: typeof GuardianRoute
   HeatmapRoute: typeof HeatmapRoute
+  HistoryRoute: typeof HistoryRoute
   LoginRoute: typeof LoginRoute
   NotificationsRoute: typeof NotificationsRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ReportRoute: typeof ReportRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   SosRoute: typeof SosRoute
+  SupportRoute: typeof SupportRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sos': {
       id: '/sos'
       path: '/sos'
@@ -236,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/notifications': {
       id: '/notifications'
       path: '/notifications'
@@ -248,6 +301,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/heatmap': {
@@ -302,14 +362,27 @@ const rootRouteChildren: RootRouteChildren = {
   CircleRoute: CircleRoute,
   GuardianRoute: GuardianRoute,
   HeatmapRoute: HeatmapRoute,
+  HistoryRoute: HistoryRoute,
   LoginRoute: LoginRoute,
   NotificationsRoute: NotificationsRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ReportRoute: ReportRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   SosRoute: SosRoute,
+  SupportRoute: SupportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -13,7 +13,7 @@ const HTML = `
 </button>
 </header>
 <!-- Main Content Canvas (Map Area) -->
-<main class="flex-grow relative w-full h-full bg-surface-variant overflow-hidden">
+<main class="flex-grow relative w-full md:ml-64 md:w-[calc(100vw-16rem)] h-full bg-surface-variant overflow-hidden">
 <!-- Base Map Placeholder Image -->
 <div class="absolute inset-0 w-full h-full">
 <img alt="Map View" class="w-full h-full object-cover opacity-60 grayscale" data-alt="A modern, minimalist top-down city map view with light gray roads and pale beige city blocks. The aesthetic is clean and corporate, focusing on clear navigation routes without distracting satellite details. High-key lighting emphasizes a calm, analytical UI background suitable for safety overlays." data-location="City Map" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiV7v2c_Oz5S5jyhwVy1_LmacUsZXlDGfisrMjBuG675QUy7Zqwl3_XF1QJZY0qjuaUSvA6hCljF1YlK8lR0Se1Fdhy4v_Au3ftYsUShIH3rZGJ8BNPrZdJvlYTI7M9gLen61Z5Xzn4ceKbn0kKtJrw28gcEFRNzr5N8I0gdLhc-3W3doVjLNJJssDjJE6iCnYwLFA0fmiiDN9K60mzoUESugw7rj0ezSRjGGQsU6lC6eZV1guLjqTGdkT_9b7glYCoQG8DBcqp4Sv">
@@ -71,9 +71,9 @@ const HTML = `
 <span class="material-symbols-outlined text-[24px]">rate_review</span>
 </button>
 <!-- Bottom Sheet Details Panel (Persistent on this view) -->
-<div class="absolute bottom-20 left-0 w-full z-30 bg-surface rounded-t-[24px] shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-surface-container-highest px-4 pt-3 pb-6 flex flex-col gap-4 transition-transform duration-300">
+<div class="absolute bottom-20 md:bottom-4 left-0 md:left-4 md:right-4 md:w-auto z-30 bg-surface rounded-t-[24px] md:rounded-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-surface-container-highest md:border px-4 pt-3 pb-6 flex flex-col gap-4 transition-transform duration-300">
 <!-- Handle -->
-<div class="w-8 h-1 bg-outline-variant rounded-full mx-auto mb-1"></div>
+<div class="w-8 h-1 bg-outline-variant rounded-full mx-auto mb-1 md:hidden"></div>
 <div class="flex justify-between items-start">
 <div class="flex flex-col">
 <h2 class="font-title-lg text-title-lg text-on-surface">Downtown Transit Hub</h2>
