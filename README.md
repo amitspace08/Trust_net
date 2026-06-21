@@ -1,5 +1,7 @@
 # TrustNet — Personal Safety App
 
+![TrustNet UI Mockup](./ui_mockup.png)
+
 TrustNet is a modern, responsive personal safety and emergency dispatch web application. It features automated safety tracking, live-location sharing capabilities, circle guardian management, and national safety helpline integrations.
 
 ## Key Features
