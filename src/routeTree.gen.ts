@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as SosReceiverRouteImport } from './routes/sos-receiver'
 import { Route as SosRouteImport } from './routes/sos'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SafeSpacesRouteImport } from './routes/safe-spaces'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -31,6 +33,11 @@ const SupportRoute = SupportRouteImport.update({
   path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SosReceiverRoute = SosReceiverRouteImport.update({
+  id: '/sos-receiver',
+  path: '/sos-receiver',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SosRoute = SosRouteImport.update({
   id: '/sos',
   path: '/sos',
@@ -44,6 +51,11 @@ const SignupRoute = SignupRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SafeSpacesRoute = SafeSpacesRouteImport.update({
+  id: '/safe-spaces',
+  path: '/safe-spaces',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportRoute = ReportRouteImport.update({
@@ -120,9 +132,11 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/report': typeof ReportRoute
+  '/safe-spaces': typeof SafeSpacesRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/sos': typeof SosRoute
+  '/sos-receiver': typeof SosReceiverRoute
   '/support': typeof SupportRoute
 }
 export interface FileRoutesByTo {
@@ -138,9 +152,11 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/report': typeof ReportRoute
+  '/safe-spaces': typeof SafeSpacesRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/sos': typeof SosRoute
+  '/sos-receiver': typeof SosReceiverRoute
   '/support': typeof SupportRoute
 }
 export interface FileRoutesById {
@@ -157,9 +173,11 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/report': typeof ReportRoute
+  '/safe-spaces': typeof SafeSpacesRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/sos': typeof SosRoute
+  '/sos-receiver': typeof SosReceiverRoute
   '/support': typeof SupportRoute
 }
 export interface FileRouteTypes {
@@ -177,9 +195,11 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/profile'
     | '/report'
+    | '/safe-spaces'
     | '/settings'
     | '/signup'
     | '/sos'
+    | '/sos-receiver'
     | '/support'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -195,9 +215,11 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/profile'
     | '/report'
+    | '/safe-spaces'
     | '/settings'
     | '/signup'
     | '/sos'
+    | '/sos-receiver'
     | '/support'
   id:
     | '__root__'
@@ -213,9 +235,11 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/profile'
     | '/report'
+    | '/safe-spaces'
     | '/settings'
     | '/signup'
     | '/sos'
+    | '/sos-receiver'
     | '/support'
   fileRoutesById: FileRoutesById
 }
@@ -232,9 +256,11 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ReportRoute: typeof ReportRoute
+  SafeSpacesRoute: typeof SafeSpacesRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   SosRoute: typeof SosRoute
+  SosReceiverRoute: typeof SosReceiverRoute
   SupportRoute: typeof SupportRoute
 }
 
@@ -245,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sos-receiver': {
+      id: '/sos-receiver'
+      path: '/sos-receiver'
+      fullPath: '/sos-receiver'
+      preLoaderRoute: typeof SosReceiverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sos': {
@@ -266,6 +299,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/safe-spaces': {
+      id: '/safe-spaces'
+      path: '/safe-spaces'
+      fullPath: '/safe-spaces'
+      preLoaderRoute: typeof SafeSpacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/report': {
@@ -368,9 +408,11 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ReportRoute: ReportRoute,
+  SafeSpacesRoute: SafeSpacesRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   SosRoute: SosRoute,
+  SosReceiverRoute: SosReceiverRoute,
   SupportRoute: SupportRoute,
 }
 export const routeTree = rootRouteImport

@@ -145,13 +145,16 @@ const HTML = `
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
-    meta: [
-      { title: "TrustNet - Privacy Guard" },
-    ],
+    meta: [{ title: "TrustNet - Privacy Guard" }],
   }),
   component: Page,
 });
 
 function Page() {
-  return <HtmlPage html={HTML} className="bg-background text-on-background min-h-screen flex flex-col font-body-md antialiased md:flex-row overflow-x-hidden pb-20 md:pb-0" />;
+  return (
+    <HtmlPage
+      html={HTML}
+      className="bg-background text-on-background min-h-screen flex flex-col font-body-md antialiased md:flex-row overflow-x-hidden pb-20 md:pb-0"
+    />
+  );
 }

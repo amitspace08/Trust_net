@@ -11,7 +11,6 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-
 import appCss from "../styles.css?url";
 import { AuthProvider, useAuth } from "../lib/auth";
 
@@ -102,7 +101,9 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold">404</h1>
         <p className="mt-2 text-sm">Page not found</p>
-        <Link to="/" className="mt-6 inline-block underline">Go home</Link>
+        <Link to="/" className="mt-6 inline-block underline">
+          Go home
+        </Link>
       </div>
     </div>
   );
@@ -118,9 +119,14 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">Something went wrong</h1>
         <button
-          onClick={() => { router.invalidate(); reset(); }}
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
           className="mt-4 rounded bg-black px-4 py-2 text-white"
-        >Try again</button>
+        >
+          Try again
+        </button>
       </div>
     </div>
   );
@@ -136,8 +142,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+      },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap",
+      },
     ],
     scripts: [
       { src: "https://cdn.tailwindcss.com?plugins=forms,container-queries" },
@@ -188,7 +200,9 @@ function BottomNav() {
           activeProps={{ className: "active" }}
           activeOptions={{ exact: true }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 22 }}>{n.icon}</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
+            {n.icon}
+          </span>
           {n.label}
         </Link>
       ))}
@@ -262,12 +276,24 @@ function ClickRouter({ onSosArm }: { onSosArm: () => void }) {
   const { logout } = useAuth();
   useEffect(() => {
     const handler = (e: MouseEvent) => {
+      if (
+        typeof window !== "undefined" &&
+        (window.location.pathname.startsWith("/sos-receiver") ||
+          window.location.pathname.startsWith("/sos"))
+      ) {
+        return;
+      }
       const target = e.target as HTMLElement | null;
       if (!target) return;
       const actionable = target.closest("button, a, [role='button']") as HTMLElement | null;
       if (!actionable) return;
       if (actionable.closest("nav[data-bottom-nav]")) return;
-      if (actionable.tagName === "A" && (actionable as HTMLAnchorElement).getAttribute("href") && (actionable as HTMLAnchorElement).getAttribute("href") !== "#") return;
+      if (
+        actionable.tagName === "A" &&
+        (actionable as HTMLAnchorElement).getAttribute("href") &&
+        (actionable as HTMLAnchorElement).getAttribute("href") !== "#"
+      )
+        return;
       if (isSosButton(actionable)) {
         e.preventDefault();
         return;
@@ -351,7 +377,9 @@ function SosHoldOverlay({
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
-    const cancel = () => { if (!done) onCancel(); };
+    const cancel = () => {
+      if (!done) onCancel();
+    };
     window.addEventListener("pointerup", cancel);
     window.addEventListener("pointercancel", cancel);
     return () => {
@@ -377,10 +405,22 @@ function SosHoldOverlay({
 
         {/* Progress ring */}
         <svg className="w-full h-full -rotate-90 relative" viewBox="0 0 160 160">
-          <circle cx="80" cy="80" r={r} stroke="rgba(255,255,255,0.15)" strokeWidth="10" fill="none" />
           <circle
-            cx="80" cy="80" r={r}
-            stroke="#ef4444" strokeWidth="10" fill="none" strokeLinecap="round"
+            cx="80"
+            cy="80"
+            r={r}
+            stroke="rgba(255,255,255,0.15)"
+            strokeWidth="10"
+            fill="none"
+          />
+          <circle
+            cx="80"
+            cy="80"
+            r={r}
+            stroke="#ef4444"
+            strokeWidth="10"
+            fill="none"
+            strokeLinecap="round"
             strokeDasharray={Math.round(c)}
             strokeDashoffset={Math.round(c * (1 - progress))}
             style={{ transition: "stroke-dashoffset 60ms linear" }}
@@ -397,7 +437,9 @@ function SosHoldOverlay({
 
         {/* Center content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-          <span className="material-symbols-outlined text-red-400" style={{ fontSize: 36 }}>sos</span>
+          <span className="material-symbols-outlined text-red-400" style={{ fontSize: 36 }}>
+            sos
+          </span>
           <span className="text-5xl font-extrabold tracking-widest mt-1">{seconds}</span>
           <span className="text-[10px] uppercase tracking-[0.3em] mt-1 text-white/70">Hold</span>
         </div>
@@ -466,4 +508,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

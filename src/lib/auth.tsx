@@ -15,7 +15,11 @@ const USERS_KEY = "trustnet_auth_users";
 const Ctx = createContext<AuthState | null>(null);
 
 function readUsers(): Record<string, { name: string; password: string; id: string }> {
-  try { return JSON.parse(localStorage.getItem(USERS_KEY) || "{}"); } catch { return {}; }
+  try {
+    return JSON.parse(localStorage.getItem(USERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
 }
 function writeUsers(u: Record<string, { name: string; password: string; id: string }>) {
   localStorage.setItem(USERS_KEY, JSON.stringify(u));
@@ -29,7 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) setUser(JSON.parse(raw));
-    } catch {}
+    } catch (err) {
+      console.warn("Failed to load user from localStorage", err);
+    }
     setReady(true);
   }, []);
 
@@ -58,7 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       writeUsers(users);
       persist({ id, name, email: key });
     },
-    logout() { persist(null); },
+    logout() {
+      persist(null);
+    },
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

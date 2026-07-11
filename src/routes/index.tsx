@@ -1,207 +1,390 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { HtmlPage } from "../lib/html-page";
-
-const HTML = `
-<!-- Navigation Drawer (Desktop) -->
-<nav class="hidden md:flex flex-col w-72 max-w-[80vw] h-full p-4 bg-surface dark:bg-surface-dim shadow-lg dark:shadow-none rounded-r-xl z-50">
-<div class="flex items-center gap-4 mb-8 p-2">
-<img alt="User Profile" class="w-12 h-12 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWpKa7rM0MgxTGa8wnfmmRkJeuGrzTo8jtAmjh4fqS-GiR5uxyDguW4QfV0cpJwBalWWxWMi9c-g6ZEjsg_Vj1IxropD6jiDRVi_0LRMNdlWAM0CaWPXnQjNSAvaqLi06IE69BRgSRKjN4BCRb3LwMft0l0Qrdynv2dm5l12QmFntTea0P2AeCWygqodfIfwXzVOdcOJH_IkGyPJGnmwA5I_B7U7YJbi_DP3FxhUYWqpfKToHJefY-1b88Qdnd-m_r3Xy4yXbRyUBP">
-<div>
-<h2 class="font-title-lg text-title-lg text-primary">Priya Sharma</h2>
-<p class="font-label-md text-label-md text-on-surface-variant">Trust Score: 98</p>
-<p class="font-label-md text-label-md text-primary font-medium mt-1">Safety Status: Protected</p>
-</div>
-</div>
-<div class="flex flex-col gap-2">
-<button class="flex items-center gap-3 p-3 w-full text-left bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary font-bold rounded-full transition-all duration-200 ease-in-out">
-<span class="material-symbols-outlined fill">home</span>
-<span class="font-label-lg text-label-lg">Home</span>
-</button>
-<button class="flex items-center gap-3 p-3 w-full text-left text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all duration-200 ease-in-out">
-<span class="material-symbols-outlined">map</span>
-<span class="font-label-lg text-label-lg">Heatmap</span>
-</button>
-<button class="flex items-center gap-3 p-3 w-full text-left text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all duration-200 ease-in-out">
-<span class="material-symbols-outlined">group</span>
-<span class="font-label-lg text-label-lg">Circle</span>
-</button>
-<button class="flex items-center gap-3 p-3 w-full text-left text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all duration-200 ease-in-out">
-<span class="material-symbols-outlined">security</span>
-<span class="font-label-lg text-label-lg">Guardian</span>
-</button>
-<hr class="my-4 border-surface-variant">
-<button class="flex items-center gap-3 p-3 w-full text-left text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all duration-200 ease-in-out">
-<span class="material-symbols-outlined">settings_ethernet</span>
-<span class="font-label-lg text-label-lg">Emergency Settings</span>
-</button>
-<button class="flex items-center gap-3 p-3 w-full text-left text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all duration-200 ease-in-out">
-<span class="material-symbols-outlined">history</span>
-<span class="font-label-lg text-label-lg">Safety History</span>
-</button>
-<button class="flex items-center gap-3 p-3 w-full text-left text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all duration-200 ease-in-out">
-<span class="material-symbols-outlined">privacy_tip</span>
-<span class="font-label-lg text-label-lg">Privacy Guard</span>
-</button>
-<button class="flex items-center gap-3 p-3 w-full text-left text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all duration-200 ease-in-out">
-<span class="material-symbols-outlined">help</span>
-<span class="font-label-lg text-label-lg">Support</span>
-</button>
-</div>
-</nav>
-<!-- Main Content Area -->
-<main class="flex-1 flex flex-col h-full overflow-y-auto pb-24 md:pb-0 relative">
-<!-- TopAppBar (Mobile) -->
-<header class="md:hidden flex justify-between items-center px-margin-mobile h-16 w-full z-40 bg-surface dark:bg-background top-0 sticky bg-surface-container dark:bg-surface-dim">
-<button class="w-10 h-10 flex items-center justify-center rounded-full text-primary dark:text-primary-fixed hover:bg-surface-container-highest dark:hover:bg-surface-variant transition-colors active:scale-95 duration-100">
-<span class="material-symbols-outlined">shield_with_heart</span>
-</button>
-<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">TrustNet</h1>
-<button class="w-10 h-10 flex items-center justify-center rounded-full text-primary dark:text-primary-fixed hover:bg-surface-container-highest dark:hover:bg-surface-variant transition-colors active:scale-95 duration-100">
-<span class="material-symbols-outlined">notifications</span>
-</button>
-</header>
-<!-- Canvas Container -->
-<div class="px-margin-mobile md:px-margin-tablet py-6 flex flex-col gap-stack-gap max-w-5xl mx-auto w-full">
-<!-- Welcome Header (Mobile mainly, desktop has drawer) -->
-<div class="md:hidden flex items-center justify-between">
-<div>
-<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Good Evening, Priya</h2>
-<p class="font-body-md text-body-md text-on-surface-variant mt-1">Ready to stay safe tonight?</p>
-</div>
-<img alt="Profile avatar of a young professional woman with dark hair." class="w-14 h-14 rounded-full border-2 border-primary-container object-cover" data-alt="A close-up profile avatar of a confident young professional woman with dark hair, set against a soft, neutral studio background. The lighting is bright and evenly distributed, creating a clean, modern aesthetic suitable for a high-end app profile. The overall tone is approachable and trustworthy." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDevHM859wbGxE1v3bjGeHm9QWzqXVEu1HVSEmBx2_-6DJRnLenf3hfP69zFX6cte_YU-hRUie6BVS5exm7Pg4n-UQBVvi1CauceVEzf22expdXYW8mqW5REfMBoJFU8WOqZPKGVjLWDYrUS0R3pIwcPygxHj9pSgSUMBGB-6ahFiXHn3LIFkapfPw4KxRgIiYdB_QQLO4hAFryndltNDNOPJL54QzcNQjzGCJicOeeXAC1D_I34mAsicy2i2dnWE2wvsopYCefXkeA">
-</div>
-<!-- Desktop Welcome -->
-<div class="hidden md:block">
-<h2 class="font-headline-lg text-headline-lg text-on-surface">Good Evening, Priya</h2>
-<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">All systems active. You are currently in a secure zone.</p>
-</div>
-<!-- Safety Status Card -->
-<div class="bg-primary-container text-on-primary-container rounded-xl p-6 flex items-center justify-between shadow-sm relative overflow-hidden">
-<div class="absolute inset-0 bg-gradient-to-r from-primary-container/50 to-transparent pointer-events-none"></div>
-<div class="relative z-10 flex items-center gap-4">
-<div class="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center">
-<span class="material-symbols-outlined fill text-2xl">verified_user</span>
-</div>
-<div>
-<h3 class="font-title-lg text-title-lg">Safe Area</h3>
-<p class="font-body-md text-body-md opacity-90">8.4/10 Safety Score • Verified 2 mins ago</p>
-</div>
-</div>
-<div class="relative z-10">
-<button class="bg-primary text-on-primary px-4 py-2 rounded-full font-label-md text-label-md hover:bg-primary/90 transition-colors">Details</button>
-</div>
-</div>
-<!-- Dashboard Grid -->
-<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
-<!-- Live Map Preview -->
-<div class="md:col-span-8 bg-surface-container-low rounded-xl overflow-hidden shadow-sm flex flex-col h-64 md:h-80 relative group">
-<img alt="Map view showing safe routes" class="absolute inset-0 w-full h-full object-cover opacity-80" data-alt="A stylized, modern digital map interface displaying a city street layout with soft, glowing green route lines indicating safe pathways. The map uses a minimalist color palette primarily consisting of light gray, white, and subtle green accents, fitting a clean, high-tech safety app aesthetic. The lighting is bright and flat, emphasizing clarity and navigation." data-location="London" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0_mjB-9zilExVl153uNBx4pz2nq5UhlWh2z3yjHQ5ACtL-NUhLTSMc8A-RVmUAX2TCZML22Kmr5RH5PuwhHZLVkmzPKb04sD9Lyk0s_dArLLtDbFqcYYpoQnQpZxtugG6wY_9Qi2aHTrGXCg357ZA1vOLEutYsXdavFXlc7hwZy-dirGRlX3nTp4QMrmG1XTNvEDPwN1B0oHSBH8lA6zGpQ1_JJvG9K0YbPvXNym7n3p7LzTMJG6dm-mhWCmV6-rvtoH6-VQZFSJ0">
-<div class="absolute inset-0 bg-gradient-to-t from-surface-container-highest/90 via-transparent to-transparent"></div>
-<div class="absolute top-4 left-4 bg-surface text-on-surface px-3 py-1.5 rounded-full font-label-md text-label-md shadow-sm flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-primary"></span>
-                        Live Tracking Active
-                    </div>
-<div class="mt-auto p-4 relative z-10">
-<h3 class="font-title-md text-title-md text-on-surface">Current Location</h3>
-<p class="font-body-md text-body-md text-on-surface-variant">Near Oxford St • 3 Safe Spaces nearby</p>
-</div>
-</div>
-<!-- Quick Actions Grid -->
-<div class="md:col-span-4 grid grid-cols-2 gap-component-gap">
-<button class="bg-surface-container rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
-<span class="material-symbols-outlined text-primary text-3xl">map</span>
-<span class="font-label-md text-label-md text-center">Safety Heatmap</span>
-</button>
-<button class="bg-surface-container rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
-<span class="material-symbols-outlined text-secondary text-3xl">route</span>
-<span class="font-label-md text-label-md text-center">Safe Route</span>
-</button>
-<button class="bg-surface-container rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
-<span class="material-symbols-outlined text-tertiary text-3xl">group</span>
-<span class="font-label-md text-label-md text-center">Trust Circle</span>
-</button>
-<button class="bg-surface-container rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
-<span class="material-symbols-outlined text-primary text-3xl">security</span>
-<span class="font-label-md text-label-md text-center">Guardian Angels</span>
-</button>
-</div>
-</div>
-<!-- Recent Activity List -->
-<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm mb-24 md:mb-8">
-<h3 class="font-title-lg text-title-lg text-on-surface mb-4">Recent Activity</h3>
-<div class="flex flex-col gap-4">
-<div class="flex items-start gap-4 pb-4 border-b border-surface-variant">
-<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0">
-<span class="material-symbols-outlined">location_on</span>
-</div>
-<div>
-<p class="font-body-md text-body-md text-on-surface">Arrived safely at <strong>Office</strong></p>
-<p class="font-label-md text-label-md text-on-surface-variant mt-1">Today, 08:45 AM</p>
-</div>
-</div>
-<div class="flex items-start gap-4 pb-4 border-b border-surface-variant">
-<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-secondary shrink-0">
-<span class="material-symbols-outlined">group_add</span>
-</div>
-<div>
-<p class="font-body-md text-body-md text-on-surface"><strong>Sarah M.</strong> accepted your Trust Circle invite</p>
-<p class="font-label-md text-label-md text-on-surface-variant mt-1">Yesterday, 19:20 PM</p>
-</div>
-</div>
-<div class="flex items-start gap-4">
-<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-tertiary shrink-0">
-<span class="material-symbols-outlined">warning</span>
-</div>
-<div>
-<p class="font-body-md text-body-md text-on-surface">Caution advised near <strong>King's Cross</strong> due to reported incident</p>
-<p class="font-label-md text-label-md text-on-surface-variant mt-1">Yesterday, 14:10 PM</p>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Persistent SOS Floating Action Button -->
-<div class="fixed bottom-24 md:bottom-8 right-margin-mobile md:right-margin-tablet z-50">
-<button class="w-20 h-20 bg-error text-on-error rounded-full shadow-lg flex flex-col items-center justify-center hover:bg-error/90 active:scale-95 transition-all duration-200 border-4 border-error-container relative group">
-<span class="absolute inset-0 rounded-full border-2 border-error animate-ping opacity-20"></span>
-<span class="font-headline-md text-headline-md font-bold tracking-widest">SOS</span>
-</button>
-</div>
-</main>
-<!-- BottomNavBar (Mobile) -->
-<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container-lowest dark:bg-surface-container-low shadow-sm dark:shadow-none flex justify-around items-center h-20 px-2 pb-safe">
-<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-3 py-1 active:scale-90 transition-transform">
-<span class="material-symbols-outlined fill">home</span>
-<span class="font-label-md text-label-md mt-1">Home</span>
-</button>
-<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-xl active:scale-90 transition-transform">
-<span class="material-symbols-outlined">map</span>
-<span class="font-label-md text-label-md mt-1">Heatmap</span>
-</button>
-<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-xl active:scale-90 transition-transform">
-<span class="material-symbols-outlined">group</span>
-<span class="font-label-md text-label-md mt-1">Circle</span>
-</button>
-<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-xl active:scale-90 transition-transform">
-<span class="material-symbols-outlined">security</span>
-<span class="font-label-md text-label-md mt-1">Guardian</span>
-</button>
-<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-xl active:scale-90 transition-transform">
-<span class="material-symbols-outlined">person</span>
-<span class="font-label-md text-label-md mt-1">Profile</span>
-</button>
-</nav>
-`;
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "../lib/auth";
 
 export const Route = createFileRoute("/")({
   head: () => ({
-    meta: [
-      { title: "TrustNet - Home" },
-    ],
+    meta: [{ title: "TrustNet - Home" }],
   }),
-  component: Page,
+  component: HomePage,
 });
 
-function Page() {
-  return <HtmlPage html={HTML} className="bg-background text-on-background font-body-md min-h-screen flex flex-col md:flex-row overflow-x-hidden pb-20 md:pb-0" />;
+function HomePage() {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  // Long-press hold state
+  const [isHolding, setIsHolding] = useState(false);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const holdTimerRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const HOLD_DURATION = 1500; // 1.5 seconds
+
+  const startHold = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setIsHolding(true);
+    setHoldProgress(0);
+    startTimeRef.current = performance.now();
+
+    const tick = () => {
+      const elapsed = performance.now() - startTimeRef.current;
+      const progress = Math.min(1, elapsed / HOLD_DURATION);
+      setHoldProgress(progress);
+
+      if (progress >= 1) {
+        setIsHolding(false);
+        setHoldProgress(0);
+        router.navigate({ to: "/sos" }); // Bypasses to Countdown screen
+        return;
+      }
+      holdTimerRef.current = requestAnimationFrame(tick);
+    };
+
+    holdTimerRef.current = requestAnimationFrame(tick);
+  };
+
+  const cancelHold = () => {
+    setIsHolding(false);
+    setHoldProgress(0);
+    if (holdTimerRef.current) {
+      cancelAnimationFrame(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (holdTimerRef.current) cancelAnimationFrame(holdTimerRef.current);
+    };
+  }, []);
+
+  const r = 90;
+  const c = 2 * Math.PI * r;
+
+  return (
+    <div className="w-full min-h-screen relative flex flex-col md:flex-row pb-24 md:pb-0 bg-[#faf9fc]">
+      {/* NavigationDrawer (Web Only) */}
+      <nav className="hidden md:flex flex-col bg-white text-gray-800 h-full rounded-r-2xl shadow-sm border-r border-gray-150 w-72 max-w-[80vw] p-5 fixed left-0 top-0 z-50">
+        <div className="flex items-center gap-4 mb-8 pt-4">
+          <img
+            alt="User Profile"
+            className="w-12 h-12 rounded-full object-cover border border-gray-100"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWpKa7rM0MgxTGa8wnfmmRkJeuGrzTo8jtAmjh4fqS-GiR5uxyDguW4QfV0cpJwBalWWxWMi9c-g6ZEjsg_Vj1IxropD6jiDRVi_0LRMNdlWAM0CaWPXnQjNSAvaqLi06IE69BRgSRKjN4BCRb3LwMft0l0Qrdynv2dm5l12QmFntTea0P2AeCWygqodfIfwXzVOdcOJH_IkGyPJGnmwA5I_B7U7YJbi_DP3FxhUYWqpfKToHJefY-1b88Qdnd-m_r3Xy4yXbRyUBP"
+          />
+          <div>
+            <h2 className="text-sm font-bold text-gray-900">{user?.name || "Priya Sharma"}</h2>
+            <p className="text-xs text-gray-500">Trust Score: 98</p>
+            <p className="text-xs text-[#0d631b] font-semibold mt-0.5">Safety Status: Protected</p>
+          </div>
+        </div>
+        <ul className="flex flex-col gap-1.5">
+          <li>
+            <Link
+              to="/settings"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-full text-gray-600 hover:bg-gray-100 transition-all text-sm font-medium"
+            >
+              <span className="material-symbols-outlined text-lg">settings_ethernet</span>
+              Emergency Settings
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/history"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-full text-gray-600 hover:bg-gray-100 transition-all text-sm font-medium"
+            >
+              <span className="material-symbols-outlined text-lg">history</span>
+              Safety History
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/privacy"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-full text-gray-600 hover:bg-gray-100 transition-all text-sm font-medium"
+            >
+              <span className="material-symbols-outlined text-lg">privacy_tip</span>
+              Privacy Guard
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/support"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-full text-gray-600 hover:bg-gray-100 transition-all text-sm font-medium"
+            >
+              <span className="material-symbols-outlined text-lg">help</span>
+              Support
+            </Link>
+          </li>
+        </ul>
+        <div className="mt-auto">
+          <ul className="flex flex-col gap-1.5">
+            <li>
+              <Link
+                to="/"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-[#0d631b]/10 text-[#0d631b] font-bold text-sm"
+              >
+                <span
+                  className="material-symbols-outlined text-lg fill"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  home
+                </span>
+                Home
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/heatmap"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-full text-gray-600 hover:bg-gray-100 transition-all text-sm font-medium"
+              >
+                <span className="material-symbols-outlined text-lg">map</span>
+                Heatmap
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/circle"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-full text-gray-600 hover:bg-gray-100 transition-all text-sm font-medium"
+              >
+                <span className="material-symbols-outlined text-lg">group</span>
+                Circle
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/guardian"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-full text-gray-600 hover:bg-gray-100 transition-all text-sm font-medium"
+              >
+                <span className="material-symbols-outlined text-lg">security</span>
+                Guardian
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/profile"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-full text-gray-600 hover:bg-gray-100 transition-all text-sm font-medium"
+              >
+                <span className="material-symbols-outlined text-lg">person</span>
+                Profile
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      {/* TopAppBar (Mobile Only) */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-200 flex justify-between items-center px-4 h-16 w-full md:hidden">
+        <div className="flex items-center gap-3">
+          <button className="w-10 h-10 flex items-center justify-center rounded-full text-[#0d631b] hover:bg-gray-100 transition">
+            <span
+              className="material-symbols-outlined"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              shield_with_heart
+            </span>
+          </button>
+          <h1 className="text-lg font-bold text-gray-900 tracking-tight">TrustNet</h1>
+        </div>
+        <Link
+          to="/notifications"
+          className="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 transition"
+        >
+          <span className="material-symbols-outlined">notifications</span>
+        </Link>
+      </header>
+
+      {/* Main Canvas */}
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 py-6 md:ml-72 pb-24 md:pb-6 flex flex-col gap-6">
+        {/* Welcome Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+              Good Evening, {user?.name.split(" ")[0] || "Priya"}
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">Ready to stay safe tonight?</p>
+          </div>
+          <img
+            alt="Profile Avatar"
+            className="w-12 h-12 rounded-full object-cover border border-gray-100 shadow-sm md:hidden"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWpKa7rM0MgxTGa8wnfmmRkJeuGrzTo8jtAmjh4fqS-GiR5uxyDguW4QfV0cpJwBalWWxWMi9c-g6ZEjsg_Vj1IxropD6jiDRVi_0LRMNdlWAM0CaWPXnQjNSAvaqLi06IE69BRgSRKjN4BCRb3LwMft0l0Qrdynv2dm5l12QmFntTea0P2AeCWygqodfIfwXzVOdcOJH_IkGyPJGnmwA5I_B7U7YJbi_DP3FxhUYWqpfKToHJefY-1b88Qdnd-m_r3Xy4yXbRyUBP"
+          />
+        </div>
+
+        {/* Safety Status Card */}
+        <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-2xl p-5 flex items-center justify-between shadow-sm relative overflow-hidden">
+          <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center border border-white/20">
+              <span
+                className="material-symbols-outlined text-2xl"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                verified_user
+              </span>
+            </div>
+            <div>
+              <h3 className="font-bold text-sm">Safe Area</h3>
+              <p className="text-[11px] opacity-90 mt-0.5">
+                8.4/10 Safety Score • Verified 2 mins ago
+              </p>
+            </div>
+          </div>
+          <button className="bg-white text-emerald-800 px-4.5 py-1.5 rounded-full font-bold text-xs hover:bg-gray-100 transition relative z-10 shadow-sm">
+            Details
+          </button>
+        </div>
+
+        {/* Core SOS Button Activator - Centerpiece */}
+        <section className="bg-white border border-gray-200/80 rounded-2xl p-6 flex flex-col items-center justify-center shadow-sm relative overflow-hidden py-10">
+          <h3 className="font-bold text-sm text-gray-900 tracking-tight text-center mb-1">
+            Emergency Activator
+          </h3>
+          <p className="text-xs text-gray-500 text-center max-w-xs mb-8">
+            Press and hold for 1.5s. Accidental taps will not trigger the alarm.
+          </p>
+
+          {/* Interactive hold-to-activate red circle */}
+          <div
+            className="relative w-56 h-56 flex items-center justify-center select-none"
+            style={{ touchAction: "none" }}
+          >
+            {/* Ambient Pulsing Glow rings */}
+            <span
+              className={`absolute inset-0 rounded-full bg-red-500/10 transition-transform duration-500 ${isHolding ? "scale-105" : "animate-ping"}`}
+            />
+            <span className="absolute inset-4 rounded-full bg-red-500/5 animate-pulse" />
+
+            {/* Circular Progress Ring */}
+            <svg
+              className="absolute w-full h-full -rotate-90 pointer-events-none"
+              viewBox="0 0 200 200"
+            >
+              <circle cx="100" cy="100" r={r} stroke="#fee2e2" strokeWidth="8" fill="none" />
+              <circle
+                cx="100"
+                cy="100"
+                r={r}
+                stroke="#ef4444"
+                strokeWidth="8"
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={Math.round(c)}
+                strokeDashoffset={Math.round(c * (1 - holdProgress))}
+                className="transition-all duration-30"
+              />
+            </svg>
+
+            {/* Hold Activator Button */}
+            <button
+              onPointerDown={startHold}
+              onPointerUp={cancelHold}
+              onPointerLeave={cancelHold}
+              onDragStart={(e) => e.preventDefault()}
+              className={`w-44 h-44 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 hover:shadow-red-500/25 transition active:scale-[0.97] flex flex-col items-center justify-center border-4 border-white ${
+                isHolding ? "bg-red-800 border-red-200" : ""
+              }`}
+            >
+              <span
+                className="material-symbols-outlined text-4xl text-white/95"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                sos
+              </span>
+              <span className="text-3xl font-extrabold tracking-widest mt-1">SOS</span>
+              <span className="text-[9px] uppercase font-semibold tracking-[0.2em] mt-1 text-red-200">
+                {isHolding ? "Holding..." : "Hold 1.5s"}
+              </span>
+            </button>
+          </div>
+        </section>
+
+        {/* Live Map Preview & Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <div className="md:col-span-8 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm h-60 relative group flex flex-col">
+            <img
+              alt="Map Preview"
+              className="absolute inset-0 w-full h-full object-cover opacity-80"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0_mjB-9zilExVl153uNBx4pz2nq5UhlWh2z3yjHQ5ACtL-NUhLTSMc8A-RVmUAX2TCZML22Kmr5RH5PuwhHZLVkmzPKb04sD9Lyk0s_dArLLtDbFqcYYpoQnQpZxtugG6wY_9Qi2aHTrGXCg357ZA1vOLEutYsXdavFXlc7hwZy-dirGRlX3nTp4QMrmG1XTNvEDPwN1B0oHSBH8lA6zGpQ1_JJvG9K0YbPvXNym7n3p7LzTMJG6dm-mhWCmV6-rvtoH6-VQZFSJ0"
+            />
+            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-gray-800 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0d631b] animate-pulse"></span>
+              Live Tracking Active
+            </div>
+            <div className="mt-auto p-4 bg-gradient-to-t from-black/60 to-transparent text-white relative z-10">
+              <h3 className="font-bold text-sm">Current Location</h3>
+              <p className="text-xs text-white/90 mt-0.5">
+                Near MG Road Metro Hub • 3 Safe Spaces nearby
+              </p>
+            </div>
+          </div>
+
+          <div className="md:col-span-4 grid grid-cols-2 gap-4">
+            <Link
+              to="/heatmap"
+              className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition shadow-sm text-gray-700"
+            >
+              <span className="material-symbols-outlined text-[#0d631b] text-3xl">map</span>
+              <span className="text-xs font-semibold text-center">Safety Heatmap</span>
+            </Link>
+            <Link
+              to="/circle"
+              className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition shadow-sm text-gray-700"
+            >
+              <span className="material-symbols-outlined text-blue-600 text-3xl">group</span>
+              <span className="text-xs font-semibold text-center">Trust Circle</span>
+            </Link>
+            <Link
+              to="/guardian"
+              className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition shadow-sm text-gray-700"
+            >
+              <span className="material-symbols-outlined text-indigo-600 text-3xl">security</span>
+              <span className="text-xs font-semibold text-center">Guardian Angels</span>
+            </Link>
+            <Link
+              to="/safe-spaces"
+              className="bg-white border border-emerald-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-emerald-50 transition shadow-sm text-gray-700"
+            >
+              <span className="material-symbols-outlined text-emerald-600 text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>store</span>
+              <span className="text-xs font-semibold text-center text-emerald-700">Safe Spaces</span>
+            </Link>
+            <Link
+              to="/profile"
+              className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition shadow-sm text-gray-700 col-span-2"
+            >
+              <span className="material-symbols-outlined text-purple-600 text-3xl">person</span>
+              <span className="text-xs font-semibold text-center">My Profile</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+          <h3 className="text-base font-bold text-gray-900 mb-4">Recent Activity</h3>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start gap-3.5 pb-4 border-b border-gray-100">
+              <div className="w-9 h-9 rounded-full bg-emerald-50 text-[#0d631b] flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-lg">location_on</span>
+              </div>
+              <div>
+                <p className="text-xs text-gray-700">
+                  Arrived safely at <strong>Office</strong>
+                </p>
+                <p className="text-[10px] text-gray-400 mt-0.5">Today, 08:45 AM</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3.5">
+              <div className="w-9 h-9 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-lg">warning</span>
+              </div>
+              <div>
+                <p className="text-xs text-gray-700">
+                  Caution advised near <strong>MG Road</strong> due to reported incident
+                </p>
+                <p className="text-[10px] text-gray-400 mt-0.5">Yesterday, 14:10 PM</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }

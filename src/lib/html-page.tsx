@@ -27,7 +27,10 @@ function indianize(html: string): string {
   out = out.replace(/\bNew York\b/g, "Mumbai");
   out = out.replace(/\bManhattan\b/g, "Bandra");
   // Units: miles → km
-  out = out.replace(/(\d+(?:\.\d+)?)\s*miles?\b/gi, (_m, n) => `${(parseFloat(n) * 1.609).toFixed(1)} km`);
+  out = out.replace(
+    /(\d+(?:\.\d+)?)\s*miles?\b/gi,
+    (_m, n) => `${(parseFloat(n) * 1.609).toFixed(1)} km`,
+  );
   // Currency
   out = out.replace(/\$(\d)/g, "₹$1");
   return out;
@@ -43,11 +46,13 @@ function addInteractivity(html: string): string {
   });
 
   // Card lift on common rounded container backgrounds
-  out = out.replace(/class="((?:[^"]*\s)?bg-(?:surface-container[\w-]*|primary-container|secondary-container|tertiary-container|surface-container-lowest|surface-container-low)\b[^"]*)"/g,
+  out = out.replace(
+    /class="((?:[^"]*\s)?bg-(?:surface-container[\w-]*|primary-container|secondary-container|tertiary-container|surface-container-lowest|surface-container-low)\b[^"]*)"/g,
     (m, c) => {
       if (/\btn-card\b/.test(c)) return m;
       return `class="${c} tn-card"`;
-    });
+    },
+  );
 
   // Subtle rise-in for major rounded blocks
   out = out.replace(/class="((?:[^"]*\s)?rounded-xl\b[^"]*)"/g, (m, c) => {
@@ -151,7 +156,10 @@ export function HtmlPage({ html, className }: { html: string; className?: string
   const finalHtml = personalize(html, name, email);
   return (
     <div
-      className={className ?? "bg-surface text-on-surface font-body-md min-h-screen flex flex-col antialiased"}
+      className={
+        className ??
+        "bg-surface text-on-surface font-body-md min-h-screen flex flex-col antialiased"
+      }
       dangerouslySetInnerHTML={{ __html: finalHtml }}
     />
   );
