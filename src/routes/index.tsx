@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../lib/auth";
+import Map from "../components/ui/Map";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -249,9 +251,9 @@ function HomePage() {
           >
             {/* Ambient Pulsing Glow rings */}
             <span
-              className={`absolute inset-0 rounded-full bg-red-500/10 transition-transform duration-500 ${isHolding ? "scale-105" : "animate-ping"}`}
+              className={`absolute inset-0 rounded-full bg-red-500/10 transition-transform duration-500 pointer-events-none ${isHolding ? "scale-105" : "animate-ping"}`}
             />
-            <span className="absolute inset-4 rounded-full bg-red-500/5 animate-pulse" />
+            <span className="absolute inset-4 rounded-full bg-red-500/5 animate-pulse pointer-events-none" />
 
             {/* Circular Progress Ring */}
             <svg
@@ -279,7 +281,7 @@ function HomePage() {
               onPointerUp={cancelHold}
               onPointerLeave={cancelHold}
               onDragStart={(e) => e.preventDefault()}
-              className={`w-44 h-44 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 hover:shadow-red-500/25 transition active:scale-[0.97] flex flex-col items-center justify-center border-4 border-white ${
+              className={`w-44 h-44 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 hover:shadow-red-500/25 transition active:scale-[0.97] flex flex-col items-center justify-center border-4 border-white relative z-10 ${
                 isHolding ? "bg-red-800 border-red-200" : ""
               }`}
             >
@@ -300,11 +302,9 @@ function HomePage() {
         {/* Live Map Preview & Actions */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <div className="md:col-span-8 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm h-60 relative group flex flex-col">
-            <img
-              alt="Map Preview"
-              className="absolute inset-0 w-full h-full object-cover opacity-80"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0_mjB-9zilExVl153uNBx4pz2nq5UhlWh2z3yjHQ5ACtL-NUhLTSMc8A-RVmUAX2TCZML22Kmr5RH5PuwhHZLVkmzPKb04sD9Lyk0s_dArLLtDbFqcYYpoQnQpZxtugG6wY_9Qi2aHTrGXCg357ZA1vOLEutYsXdavFXlc7hwZy-dirGRlX3nTp4QMrmG1XTNvEDPwN1B0oHSBH8lA6zGpQ1_JJvG9K0YbPvXNym7n3p7LzTMJG6dm-mhWCmV6-rvtoH6-VQZFSJ0"
-            />
+            <div className="absolute inset-0 w-full h-full">
+              <Map />
+            </div>
             <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-gray-800 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#0d631b] animate-pulse"></span>
               Live Tracking Active

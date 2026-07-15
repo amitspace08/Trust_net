@@ -1,5 +1,6 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { registerAsGuardianAngel, setGuardianAvailability } from "../services/guardianService";
 
 export const Route = createFileRoute("/guardian")({
   head: () => ({
@@ -40,21 +41,57 @@ function GuardianPage() {
     } catch { /* fallback */ }
   }, []);
 
+  const getUid = () => {
+    try {
+      const raw = localStorage.getItem("trustnet_auth_user");
+      if (raw) {
+        const u = JSON.parse(raw);
+        return u.id || "amit123";
+      }
+    } catch {}
+    return "amit123";
+  };
+
+  const getName = () => {
+    try {
+      const raw = localStorage.getItem("trustnet_auth_user");
+      if (raw) {
+        const u = JSON.parse(raw);
+        return u.name || "Guardian Angel";
+      }
+    } catch {}
+    return "Guardian Angel";
+  };
+
   const saveProfile = (updated: GuardianProfile) => {
     setProfile(updated);
     localStorage.setItem("trustnet_guardian_profile", JSON.stringify(updated));
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!agreed) return;
     setRegistering(true);
-    setTimeout(() => {
+    try {
+      const uid = getUid();
+      const name = getName();
+      await registerAsGuardianAngel(uid, name);
       saveProfile({ ...profile, registered: true, available: true });
-      setRegistering(false);
-    }, 1200);
+    } catch (err) {
+      console.error("Error registering as Guardian Angel:", err);
+    }
+    setRegistering(false);
   };
 
-  const toggleAvailability = () => saveProfile({ ...profile, available: !profile.available });
+  const toggleAvailability = async () => {
+    const updatedAvailable = !profile.available;
+    try {
+      const uid = getUid();
+      await setGuardianAvailability(uid, updatedAvailable);
+      saveProfile({ ...profile, available: updatedAvailable });
+    } catch (err) {
+      console.error("Error toggling availability:", err);
+    }
+  };
 
   const bottomNav = [
     { to: "/", icon: "home", label: "Home", active: false },

@@ -1,5 +1,6 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { registerSafeSpace, getSafeSpacesWithinRadius } from "../services/safeSpaceService";
 
 export const Route = createFileRoute("/safe-spaces")({
   head: () => ({
@@ -50,37 +51,76 @@ function SafeSpacesPage() {
   const [selectedSpace, setSelectedSpace] = useState<SafeSpace | null>(null);
   const [spaces, setSpaces] = useState<SafeSpace[]>(MOCK_SAFE_SPACES);
   const [showMapPopup, setShowMapPopup] = useState<SafeSpace | null>(null);
+  const [location, setLocation] = useState({ lat: 26.9124, lng: 75.7873 });
 
-  // Load any user-registered spaces from localStorage
+  // Get current position on mount
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("trustnet_safe_spaces");
-      if (raw) {
-        const extra: SafeSpace[] = JSON.parse(raw);
-        setSpaces([...MOCK_SAFE_SPACES, ...extra]);
-      }
-    } catch { /* fallback */ }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      (err) => console.log("Geolocation error in safe-spaces:", err),
+      { enableHighAccuracy: true }
+    );
   }, []);
 
-  const handleSubmit = () => {
-    if (!form.name || !form.address || !form.confirmed) return;
-    const newSpace: SafeSpace = {
-      id: `user_${Date.now()}`,
-      name: form.name,
-      type: form.type,
-      distance: Math.floor(Math.random() * 400) + 100,
-      address: form.address,
-      lat: 12.976,
-      lng: 77.607,
+  // Fetch Safe Spaces within 10km dynamically from Firestore
+  useEffect(() => {
+    const fetchSpaces = async () => {
+      try {
+        const list = await getSafeSpacesWithinRadius(location.lat, location.lng, 10);
+        const mappedList: SafeSpace[] = list.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          type: item.type,
+          distance: item.distance,
+          address: item.address,
+          lat: item.latitude,
+          lng: item.longitude,
+          // Generate simulated absolute position offsets if mapping on mock maps is needed
+          mapPin: {
+            top: `${Math.floor(Math.random() * 60) + 20}%`,
+            left: `${Math.floor(Math.random() * 60) + 20}%`,
+          },
+        }));
+        setSpaces(mappedList);
+      } catch (err) {
+        console.error("Error loading safe spaces from firestore:", err);
+      }
     };
-    const updated = [...spaces, newSpace];
-    setSpaces(updated);
+    fetchSpaces();
+  }, [location]);
+
+  const handleSubmit = async () => {
+    if (!form.name || !form.address || !form.confirmed) return;
     try {
-      const existing: SafeSpace[] = JSON.parse(localStorage.getItem("trustnet_safe_spaces") || "[]");
-      localStorage.setItem("trustnet_safe_spaces", JSON.stringify([...existing, newSpace]));
-    } catch { /* fallback */ }
-    setSubmitted(true);
-    setTimeout(() => { setSubmitted(false); setForm(EMPTY_FORM); setTab("list"); }, 2000);
+      await registerSafeSpace(form.name, form.type, location.lat, location.lng, form.address);
+      
+      // Refresh list immediately
+      const list = await getSafeSpacesWithinRadius(location.lat, location.lng, 10);
+      const mappedList: SafeSpace[] = list.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        distance: item.distance,
+        address: item.address,
+        lat: item.latitude,
+        lng: item.longitude,
+      }));
+      setSpaces(mappedList);
+
+      setSubmitted(true);
+      setTimeout(() => {
+        setSubmitted(false);
+        setForm(EMPTY_FORM);
+        setTab("list");
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to register safe space:", err);
+    }
   };
 
   const bottomNav = [
