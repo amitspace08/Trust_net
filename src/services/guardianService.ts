@@ -42,7 +42,7 @@ export const registerAsGuardianAngel = async (uid: string, name = "Guardian Ange
       guardianResponseCount: 0,
       guardianRegisteredAt: serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 
   // Also write to user_locations so they have a baseline location
@@ -71,7 +71,7 @@ export const findGuardianAngels = async (lat: number, lng: number, maxRadius = 2
   const q = query(
     collection(db, "users"),
     where("isGuardianAngel", "==", true),
-    where("guardianAvailable", "==", true)
+    where("guardianAvailable", "==", true),
   );
 
   const snap = await getDocs(q);

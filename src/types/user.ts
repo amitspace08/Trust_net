@@ -1,5 +1,4 @@
 export interface User {
-
   uid: string;
 
   displayName: string;
@@ -13,5 +12,4 @@ export interface User {
   verification_status: boolean;
 
   online: boolean;
-
 }

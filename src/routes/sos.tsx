@@ -3,7 +3,16 @@ import { useEffect, useState } from "react";
 import { loadContacts, Contact, getLayer2Candidates, Layer2Candidate } from "../lib/contacts-db";
 import { triggerSOS, cancelSOS } from "../services/sosService";
 import { sendSOSNotification } from "../services/notificationService";
-import { collection, getDocs, addDoc, serverTimestamp, doc, onSnapshot, getDoc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+  doc,
+  onSnapshot,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { triggerLayer3, updateGuardianRating, getDistance } from "../services/guardianService";
 import { getNearestSafeSpace } from "../services/safeSpaceService";
@@ -44,29 +53,29 @@ function SosEmergencyPage() {
       (err) => {
         console.error("Error getting location:", err);
         // Fallback Delhi default
-        setLocation({ lat: 28.6139, lng: 77.2090 });
+        setLocation({ lat: 28.6139, lng: 77.209 });
       },
-      { enableHighAccuracy: true, timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 8000 },
     );
   }, []);
 
-  const [activeState, setActiveState] = useState<"countdown" | "active" | "l2-searching" | "l3-searching">(
-    "countdown",
-  );
+  const [activeState, setActiveState] = useState<
+    "countdown" | "active" | "l2-searching" | "l3-searching"
+  >("countdown");
   const [secondsLeft, setSecondsLeft] = useState(5);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [layer2Contacts, setLayer2Contacts] = useState<Layer2Candidate[]>([]);
-  
+
   // Dynamic timeouts (L1 -> 90s, L2 -> 120s)
   const [escalationTime, setEscalationTime] = useState(90);
   const [layer3EscalationTime, setLayer3EscalationTime] = useState(120);
-  
+
   const [isLayer2Escalated, setIsLayer2Escalated] = useState(false);
   const [isLayer3Escalated, setIsLayer3Escalated] = useState(false);
-  
+
   const [responderName, setResponderName] = useState<string | null>(null);
   const [responderUID, setResponderUID] = useState<string | null>(null);
-  
+
   const [layer3Alerted, setLayer3Alerted] = useState<string[]>([]);
   const [layer3Declined, setLayer3Declined] = useState<string[]>([]);
   const [layer3Exhausted, setLayer3Exhausted] = useState(false);
@@ -223,7 +232,7 @@ function SosEmergencyPage() {
         const userId = "amit123";
         const l2List = getLayer2Candidates();
         const l2Uids = l2List.map((c) => c.id);
-        
+
         await updateDoc(doc(db, "sos_sessions", userId), {
           layerActive: 2,
           layer2Alerted: l2Uids,
@@ -266,7 +275,7 @@ function SosEmergencyPage() {
     const triggerL1 = async () => {
       try {
         const userId = "amit123";
-        await triggerSOS(userId, location?.lat || 28.6139, location?.lng || 77.2090);
+        await triggerSOS(userId, location?.lat || 28.6139, location?.lng || 77.209);
         console.log("Firebase: SOS Session Created");
 
         const snapshot = await getDocs(collection(db, "trust_relationships"));
@@ -311,7 +320,7 @@ function SosEmergencyPage() {
       if (confirmTimeoutId) {
         clearTimeout(confirmTimeoutId);
       }
-      
+
       // Call Firebase cancelSOS
       const userId = "amit123";
       try {
@@ -392,7 +401,8 @@ function SosEmergencyPage() {
           ) : (
             <div className="bg-white border border-gray-150 rounded-2xl p-5 shadow-sm">
               <p className="text-xs text-gray-655 leading-relaxed">
-                Your safety contacts have been notified that you are safe. Thank you for using TrustNet.
+                Your safety contacts have been notified that you are safe. Thank you for using
+                TrustNet.
               </p>
             </div>
           )}
@@ -454,7 +464,8 @@ function SosEmergencyPage() {
             onClick={handleEndSosWithDoubleTap}
             className="w-full bg-white/10 hover:bg-white/15 text-white border border-white/20 font-bold py-4 rounded-xl shadow-lg transition active:scale-[0.98] flex items-center justify-center gap-2 uppercase text-xs"
           >
-            <span className="material-symbols-outlined text-sm">check_circle</span>I am safe — end SOS
+            <span className="material-symbols-outlined text-sm">check_circle</span>I am safe — end
+            SOS
           </button>
         </div>
       </div>
@@ -468,7 +479,10 @@ function SosEmergencyPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-amber-950 via-amber-900 to-orange-900 opacity-95 pointer-events-none" />
 
         <header className="text-center pt-12 z-10">
-          <span className="material-symbols-outlined text-4xl text-amber-300 animate-pulse" style={{ fontVariationSettings: "'FILL' 1" }}>
+          <span
+            className="material-symbols-outlined text-4xl text-amber-300 animate-pulse"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
             shield_with_heart
           </span>
           <h1 className="text-xl font-bold tracking-tight mt-3">Layer 3 — Guardian Angels</h1>
@@ -505,7 +519,8 @@ function SosEmergencyPage() {
             onClick={handleEndSosWithDoubleTap}
             className="w-full bg-white/10 hover:bg-white/15 text-white border border-white/20 font-bold py-4 rounded-xl shadow-lg transition active:scale-[0.98] flex items-center justify-center gap-2 uppercase text-xs"
           >
-            <span className="material-symbols-outlined text-sm">check_circle</span>I am safe — end SOS
+            <span className="material-symbols-outlined text-sm">check_circle</span>I am safe — end
+            SOS
           </button>
         </div>
       </div>
@@ -530,8 +545,18 @@ function SosEmergencyPage() {
         </header>
 
         <div className="relative w-56 h-56 flex items-center justify-center z-10">
-          <svg className="absolute w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 200 200">
-            <circle cx="100" cy="100" r={r} stroke="rgba(255,255,255,0.15)" strokeWidth="10" fill="none" />
+          <svg
+            className="absolute w-full h-full -rotate-90 pointer-events-none"
+            viewBox="0 0 200 200"
+          >
+            <circle
+              cx="100"
+              cy="100"
+              r={r}
+              stroke="rgba(255,255,255,0.15)"
+              strokeWidth="10"
+              fill="none"
+            />
             <circle
               cx="100"
               cy="100"
@@ -587,14 +612,20 @@ function SosEmergencyPage() {
 
   // Safe Space positions relative
   const spacePos = nearestSpace
-    ? getRelativePercent(nearestSpace.latitude, nearestSpace.longitude, location?.lat || 28.6139, location?.lng || 77.2090)
+    ? getRelativePercent(
+        nearestSpace.latitude,
+        nearestSpace.longitude,
+        location?.lat || 28.6139,
+        location?.lng || 77.209,
+      )
     : { top: "40%", left: "52%" };
 
   return (
     <div className="w-full min-h-screen bg-[#faf9fc] flex flex-col justify-between items-center text-gray-800 select-none animate-fade-in relative">
-      
       {/* 1. Header Banner showing current layer color-coded */}
-      <div className={`w-full px-5 py-3.5 flex items-center justify-between shadow-md relative overflow-hidden z-20 ${getLayerColorClass()}`}>
+      <div
+        className={`w-full px-5 py-3.5 flex items-center justify-between shadow-md relative overflow-hidden z-20 ${getLayerColorClass()}`}
+      >
         <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
         <div className="flex items-center gap-2.5 relative z-10">
           <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
@@ -603,7 +634,12 @@ function SosEmergencyPage() {
           </h2>
         </div>
         <span className="text-xs font-black opacity-95 relative z-10">
-          {!responderName && (isLayer3Escalated ? "L3 Active" : isLayer2Escalated ? `${layer3EscalationTime}s` : `${escalationTime}s`)}
+          {!responderName &&
+            (isLayer3Escalated
+              ? "L3 Active"
+              : isLayer2Escalated
+                ? `${layer3EscalationTime}s`
+                : `${escalationTime}s`)}
         </span>
       </div>
 
@@ -645,19 +681,14 @@ function SosEmergencyPage() {
 
           {/* Active Blue Responder route line */}
           {responderName && (
-            <line
-              x1="50%"
-              y1="50%"
-              x2="70%"
-              y2="30%"
-              stroke="#2563eb"
-              strokeWidth="3.5"
-            />
+            <line x1="50%" y1="50%" x2="70%" y2="30%" stroke="#2563eb" strokeWidth="3.5" />
           )}
         </svg>
 
         {/* Live HUD indicator */}
-        <div className={`absolute top-3 left-3 text-white px-3 py-1 rounded-full text-[9px] font-bold shadow z-20 ${getLayerColorClass()}`}>
+        <div
+          className={`absolute top-3 left-3 text-white px-3 py-1 rounded-full text-[9px] font-bold shadow z-20 ${getLayerColorClass()}`}
+        >
           <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping mr-1 inline-block"></span>
           Live GPS Broadcast
         </div>
@@ -667,19 +698,29 @@ function SosEmergencyPage() {
           <div className="bg-white/95 border border-gray-150 px-2 py-0.5 rounded shadow text-[8px] font-black text-gray-800 -mt-7 absolute whitespace-nowrap">
             Priya (You)
           </div>
-          <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center animate-pulse ${getLayerBorderClass()} bg-white/20`}>
-            <div className={`w-3.5 h-3.5 rounded-full shadow border-2 border-white ${isLayer3Escalated ? "bg-amber-500" : isLayer2Escalated ? "bg-teal-500" : "bg-purple-600"}`} />
+          <div
+            className={`w-10 h-10 rounded-full border-2 flex items-center justify-center animate-pulse ${getLayerBorderClass()} bg-white/20`}
+          >
+            <div
+              className={`w-3.5 h-3.5 rounded-full shadow border-2 border-white ${isLayer3Escalated ? "bg-amber-500" : isLayer2Escalated ? "bg-teal-500" : "bg-purple-600"}`}
+            />
           </div>
         </div>
 
         {/* Nearest Safe Space Pin (Pulsing green border - Task 2 S3.2) */}
         {nearestSpace && (
-          <div style={{ top: spacePos.top, left: spacePos.left }} className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20 transition-all duration-300">
+          <div
+            style={{ top: spacePos.top, left: spacePos.left }}
+            className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20 transition-all duration-300"
+          >
             <div className="bg-white border border-emerald-250 px-2 py-0.5 rounded shadow text-[8px] font-bold text-emerald-800 -mt-7 absolute whitespace-nowrap">
               Safe Space: {nearestSpace.name}
             </div>
             <div className="w-7 h-7 rounded-full bg-emerald-600 border-2 border-white shadow-lg flex items-center justify-center animate-pulse ring-4 ring-emerald-500/20">
-              <span className="material-symbols-outlined text-white text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span
+                className="material-symbols-outlined text-white text-[12px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
                 local_pharmacy
               </span>
             </div>
@@ -690,7 +731,10 @@ function SosEmergencyPage() {
         {/* Layer 2 Candidate Pins (Teal) */}
         {isLayer2Escalated && !isLayer3Escalated && !responderName && (
           <>
-            <div style={{ top: "30%", left: "70%" }} className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20">
+            <div
+              style={{ top: "30%", left: "70%" }}
+              className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20"
+            >
               <div className="bg-white border border-teal-200 px-2 py-0.5 rounded shadow text-[8px] font-semibold text-teal-800 -mt-6 absolute whitespace-nowrap">
                 Layer 2 — Rahul
               </div>
@@ -698,7 +742,10 @@ function SosEmergencyPage() {
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
               </div>
             </div>
-            <div style={{ top: "60%", left: "40%" }} className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20">
+            <div
+              style={{ top: "60%", left: "40%" }}
+              className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20"
+            >
               <div className="bg-white border border-teal-200 px-2 py-0.5 rounded shadow text-[8px] font-semibold text-teal-800 -mt-6 absolute whitespace-nowrap">
                 Layer 2 — Dev
               </div>
@@ -710,34 +757,56 @@ function SosEmergencyPage() {
         )}
 
         {/* Dynamic Alerted Guardian Angel pins with fades (Task 1 S3.4, S3.5) */}
-        {isLayer3Escalated && !responderName && gaLocations.map((ga) => {
-          const pos = getRelativePercent(ga.latitude, ga.longitude, location?.lat || 28.6139, location?.lng || 77.2090);
-          const isDeclined = layer3Declined.includes(ga.uid);
-          
-          // Current active alerted candidate (the first who has not declined yet)
-          const isActiveCandidate = !isDeclined && (layer3Alerted.find((uid) => !layer3Declined.includes(uid)) === ga.uid);
+        {isLayer3Escalated &&
+          !responderName &&
+          gaLocations.map((ga) => {
+            const pos = getRelativePercent(
+              ga.latitude,
+              ga.longitude,
+              location?.lat || 28.6139,
+              location?.lng || 77.209,
+            );
+            const isDeclined = layer3Declined.includes(ga.uid);
 
-          return (
-            <div key={ga.uid} style={{ top: pos.top, left: pos.left }} className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20 transition-all duration-500">
-              <div className="bg-white border border-amber-200 px-2 py-0.5 rounded shadow text-[8px] font-semibold text-amber-800 -mt-6 absolute whitespace-nowrap">
-                GA — {ga.name} {isDeclined ? "(No Response)" : ""}
+            // Current active alerted candidate (the first who has not declined yet)
+            const isActiveCandidate =
+              !isDeclined && layer3Alerted.find((uid) => !layer3Declined.includes(uid)) === ga.uid;
+
+            return (
+              <div
+                key={ga.uid}
+                style={{ top: pos.top, left: pos.left }}
+                className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20 transition-all duration-500"
+              >
+                <div className="bg-white border border-amber-200 px-2 py-0.5 rounded shadow text-[8px] font-semibold text-amber-800 -mt-6 absolute whitespace-nowrap">
+                  GA — {ga.name} {isDeclined ? "(No Response)" : ""}
+                </div>
+                <div
+                  className={`w-6 h-6 rounded-full border border-white shadow flex items-center justify-center transition-all ${
+                    isDeclined
+                      ? "bg-gray-400 opacity-40 scale-90"
+                      : isActiveCandidate
+                        ? "bg-amber-500 scale-110 animate-pulse ring-4 ring-amber-500/20"
+                        : "bg-amber-300 opacity-60"
+                  }`}
+                >
+                  <span
+                    className="material-symbols-outlined text-white text-[11px]"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    security
+                  </span>
+                </div>
               </div>
-              <div className={`w-6 h-6 rounded-full border border-white shadow flex items-center justify-center transition-all ${
-                isDeclined
-                  ? "bg-gray-400 opacity-40 scale-90"
-                  : isActiveCandidate
-                    ? "bg-amber-500 scale-110 animate-pulse ring-4 ring-amber-500/20"
-                    : "bg-amber-300 opacity-60"
-              }`}>
-                <span className="material-symbols-outlined text-white text-[11px]" style={{ fontVariationSettings: "'FILL' 1" }}>security</span>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
 
         {/* Responding Helper (Blue Pin) */}
         {responderName && (
-          <div style={{ top: "30%", left: "70%" }} className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20 animate-bounce">
+          <div
+            style={{ top: "30%", left: "70%" }}
+            className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20 animate-bounce"
+          >
             <div className="bg-blue-600 text-white px-2 py-0.5 rounded shadow-lg text-[8px] font-black -mt-7 absolute whitespace-nowrap leading-none border border-blue-400">
               {responderName} is responding!
             </div>
@@ -779,14 +848,16 @@ function SosEmergencyPage() {
         {/* 4-Node Escalation Timeline */}
         <div className="flex justify-between items-center px-4 relative mt-1">
           <div className="absolute left-6 right-6 top-1/2 h-[3px] bg-gray-200 -translate-y-1/2 z-0" />
-          
+
           {/* L1 Node */}
           <div className="flex flex-col items-center gap-1 z-10">
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 ${
-              isLayer2Escalated || isLayer3Escalated || responderName
-                ? "bg-purple-600 border-purple-600 text-white"
-                : "bg-purple-50 border-purple-600 text-purple-600 animate-pulse"
-            }`}>
+            <div
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 ${
+                isLayer2Escalated || isLayer3Escalated || responderName
+                  ? "bg-purple-600 border-purple-600 text-white"
+                  : "bg-purple-50 border-purple-600 text-purple-600 animate-pulse"
+              }`}
+            >
               1
             </div>
             <span className="text-[8px] font-black text-gray-400">L1</span>
@@ -794,13 +865,15 @@ function SosEmergencyPage() {
 
           {/* L2 Node */}
           <div className="flex flex-col items-center gap-1 z-10">
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 ${
-              isLayer3Escalated || (isLayer2Escalated && responderName)
-                ? "bg-teal-600 border-teal-600 text-white"
-                : isLayer2Escalated
-                  ? "bg-teal-50 border-teal-600 text-teal-600 animate-pulse"
-                  : "bg-gray-100 border-gray-300 text-gray-400"
-            }`}>
+            <div
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 ${
+                isLayer3Escalated || (isLayer2Escalated && responderName)
+                  ? "bg-teal-600 border-teal-600 text-white"
+                  : isLayer2Escalated
+                    ? "bg-teal-50 border-teal-600 text-teal-600 animate-pulse"
+                    : "bg-gray-100 border-gray-300 text-gray-400"
+              }`}
+            >
               2
             </div>
             <span className="text-[8px] font-black text-gray-400">L2</span>
@@ -808,13 +881,15 @@ function SosEmergencyPage() {
 
           {/* L3 Node */}
           <div className="flex flex-col items-center gap-1 z-10">
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 ${
-              isLayer3Escalated && responderName
-                ? "bg-amber-500 border-amber-500 text-white"
-                : isLayer3Escalated
-                  ? "bg-amber-50 border-amber-500 text-amber-500 animate-pulse"
-                  : "bg-gray-100 border-gray-300 text-gray-400"
-            }`}>
+            <div
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 ${
+                isLayer3Escalated && responderName
+                  ? "bg-amber-500 border-amber-500 text-white"
+                  : isLayer3Escalated
+                    ? "bg-amber-50 border-amber-500 text-amber-500 animate-pulse"
+                    : "bg-gray-100 border-gray-300 text-gray-400"
+              }`}
+            >
               3
             </div>
             <span className="text-[8px] font-black text-gray-400">GA</span>
@@ -831,20 +906,35 @@ function SosEmergencyPage() {
 
         {/* Task 2 S4.2 & S1.4: Persistent Nearest Safe Space Banner / layer3Exhausted Banner */}
         {nearestSpace && (
-          <div className={`border rounded-2xl p-4 flex gap-3 items-center shadow-sm transition-all duration-500 ${
-            layer3Exhausted 
-              ? "bg-emerald-600 border-emerald-500 text-white ring-4 ring-emerald-500/20" 
-              : "bg-emerald-50 border-emerald-200 text-emerald-800"
-          }`}>
-            <span className="material-symbols-outlined text-2xl shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>
-              {nearestSpace.type === "police_station" ? "local_police" : nearestSpace.type === "pharmacy" ? "local_pharmacy" : "store"}
+          <div
+            className={`border rounded-2xl p-4 flex gap-3 items-center shadow-sm transition-all duration-500 ${
+              layer3Exhausted
+                ? "bg-emerald-600 border-emerald-500 text-white ring-4 ring-emerald-500/20"
+                : "bg-emerald-50 border-emerald-200 text-emerald-800"
+            }`}
+          >
+            <span
+              className="material-symbols-outlined text-2xl shrink-0"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              {nearestSpace.type === "police_station"
+                ? "local_police"
+                : nearestSpace.type === "pharmacy"
+                  ? "local_pharmacy"
+                  : "store"}
             </span>
             <div className="flex-1 min-w-0">
-              <h4 className={`font-black text-xs leading-none ${layer3Exhausted ? "text-white" : "text-emerald-900"}`}>
-                {layer3Exhausted ? "⚠️ SOS Alert Exhausted — Head to Safe Space" : "Nearest verified Safe Space"}
+              <h4
+                className={`font-black text-xs leading-none ${layer3Exhausted ? "text-white" : "text-emerald-900"}`}
+              >
+                {layer3Exhausted
+                  ? "⚠️ SOS Alert Exhausted — Head to Safe Space"
+                  : "Nearest verified Safe Space"}
               </h4>
-              <p className={`text-[10px] mt-1.5 leading-relaxed font-semibold ${layer3Exhausted ? "text-emerald-50" : "text-emerald-700"}`}>
-                {layer3Exhausted 
+              <p
+                className={`text-[10px] mt-1.5 leading-relaxed font-semibold ${layer3Exhausted ? "text-emerald-50" : "text-emerald-700"}`}
+              >
+                {layer3Exhausted
                   ? `Walk to ${nearestSpace.name} now. Help is registered there. (${nearestSpace.distance}m away)`
                   : `${nearestSpace.name} is ${nearestSpace.distance}m from your location.`}
               </p>
@@ -854,8 +944,8 @@ function SosEmergencyPage() {
               target="_blank"
               rel="noopener noreferrer"
               className={`px-3.5 py-2.5 font-extrabold text-[10px] uppercase rounded-xl transition shadow active:scale-[0.98] shrink-0 ${
-                layer3Exhausted 
-                  ? "bg-white text-emerald-800 hover:bg-emerald-50" 
+                layer3Exhausted
+                  ? "bg-white text-emerald-800 hover:bg-emerald-50"
                   : "bg-emerald-600 text-white hover:bg-emerald-700"
               }`}
             >

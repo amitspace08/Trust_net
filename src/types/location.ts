@@ -1,5 +1,4 @@
 export interface UserLocation {
-
   uid: string;
 
   geopoint: any;
@@ -7,5 +6,4 @@ export interface UserLocation {
   timestamp: any;
 
   sharingEnabled: boolean;
-
 }

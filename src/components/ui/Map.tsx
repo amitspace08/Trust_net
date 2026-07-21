@@ -6,11 +6,7 @@ import { getSafeSpacesWithinRadius } from "../../services/safeSpaceService";
 import { getAreaScore, submitRating } from "../../services/safetyRatingService";
 import { getDistance } from "../../services/guardianService";
 import { useEffect, useState } from "react";
-import {
-  GoogleMap,
-  Marker,
-  useJsApiLoader,
-} from "@react-google-maps/api";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { subscribeToNotifications } from "../../services/notificationListener";
 import { markNotificationRead } from "../../services/readNotification";
 
@@ -36,7 +32,7 @@ const greenBuildingIcon = {
 export default function Map() {
   const [center, setCenter] = useState({
     lat: 28.6139,
-    lng: 77.2090,
+    lng: 77.209,
   });
 
   const [users, setUsers] = useState<any[]>([]);
@@ -50,7 +46,7 @@ export default function Map() {
   const [lastBadgeLocation, setLastBadgeLocation] = useState<any>(null);
   const [showScorePopup, setShowScorePopup] = useState(false);
   const [showRateModal, setShowRateModal] = useState(false);
-  
+
   // Rate form states
   const [newScore, setNewScore] = useState<number | null>(null);
   const [newTags, setNewTags] = useState<string[]>([]);
@@ -88,7 +84,7 @@ export default function Map() {
       {
         enableHighAccuracy: true,
         maximumAge: 0,
-      }
+      },
     );
 
     return () => {
@@ -106,12 +102,9 @@ export default function Map() {
       setSosUsers(sessions);
     });
 
-    const unsubscribeNotifications = subscribeToNotifications(
-      "friend1",
-      (data: any[]) => {
-        setNotifications(data);
-      }
-    );
+    const unsubscribeNotifications = subscribeToNotifications("friend1", (data: any[]) => {
+      setNotifications(data);
+    });
 
     return () => {
       unsubscribeLocations();
@@ -158,7 +151,7 @@ export default function Map() {
         center.lat,
         center.lng,
         lastBadgeLocation.lat,
-        lastBadgeLocation.lng
+        lastBadgeLocation.lng,
       );
       if (dist > 150) {
         loadBadgeScore(center);
@@ -172,7 +165,7 @@ export default function Map() {
     setRatingError(null);
     try {
       await submitRating("amit123", center.lat, center.lng, newScore, newTags);
-      
+
       setRatingSuccess(true);
       setShowRateModal(false);
       setShowScorePopup(false);
@@ -191,9 +184,7 @@ export default function Map() {
   };
 
   const toggleTag = (tag: string) => {
-    setNewTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+    setNewTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   };
 
   const tagsPool = ["Poor lighting", "Isolated", "Well lit", "Crowded", "Police presence"];
@@ -230,7 +221,7 @@ export default function Map() {
             (user) =>
               user.id !== "amit123" && // don't render self marker double
               typeof user.latitude === "number" &&
-              typeof user.longitude === "number"
+              typeof user.longitude === "number",
           )
           .map((user) => (
             <Marker
@@ -244,11 +235,7 @@ export default function Map() {
 
         {/* SOS User Markers */}
         {sosUsers
-          .filter(
-            (user) =>
-              typeof user.latitude === "number" &&
-              typeof user.longitude === "number"
-          )
+          .filter((user) => typeof user.latitude === "number" && typeof user.longitude === "number")
           .map((user) => (
             <Marker
               key={`sos-${user.id}`}
@@ -310,19 +297,38 @@ export default function Map() {
 
       {/* Rating success confirmation toast */}
       {ratingSuccess && (
-        <div style={{ position: "absolute", bottom: "20px", left: "50%", transform: "translateX(-50%)", zIndex: 1000 }} className="bg-emerald-600 text-white font-bold px-5 py-3 rounded-full shadow-lg text-xs tracking-wide animate-bounce">
+        <div
+          style={{
+            position: "absolute",
+            bottom: "20px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 1000,
+          }}
+          className="bg-emerald-600 text-white font-bold px-5 py-3 rounded-full shadow-lg text-xs tracking-wide animate-bounce"
+        >
           Your rating helps keep your community safe.
         </div>
       )}
 
       {/* Badge Proximity Popup Info */}
       {showScorePopup && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 950 }} className="bg-black/35 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-5 shadow-2xl max-w-xs w-full flex flex-col gap-4 animate-scale-in" onClick={e => e.stopPropagation()}>
-            <h3 className="font-extrabold text-sm text-gray-900 tracking-tight">Area Safety Profile</h3>
-            
+        <div
+          style={{ position: "absolute", inset: 0, zIndex: 950 }}
+          className="bg-black/35 flex items-center justify-center p-4"
+        >
+          <div
+            className="bg-white rounded-3xl p-5 shadow-2xl max-w-xs w-full flex flex-col gap-4 animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-extrabold text-sm text-gray-900 tracking-tight">
+              Area Safety Profile
+            </h3>
+
             <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white text-lg font-black ${getBadgeBgColor()}`}>
+              <div
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white text-lg font-black ${getBadgeBgColor()}`}
+              >
                 {areaScore && areaScore.ratingCount >= 3 ? areaScore.score.toFixed(1) : "?"}
               </div>
               <div className="flex-grow">
@@ -330,7 +336,9 @@ export default function Map() {
                   {areaScore && areaScore.ratingCount >= 3 ? "Safety Index" : "Insufficient Data"}
                 </p>
                 <p className="text-[10px] text-gray-400 mt-0.5">
-                  {areaScore && areaScore.ratingCount >= 3 ? `${areaScore.ratingCount} crowdsourced ratings` : "No ratings logged within 150m"}
+                  {areaScore && areaScore.ratingCount >= 3
+                    ? `${areaScore.ratingCount} crowdsourced ratings`
+                    : "No ratings logged within 150m"}
                 </p>
               </div>
             </div>
@@ -343,18 +351,26 @@ export default function Map() {
             )}
 
             {/* Top tags list */}
-            {areaScore && areaScore.ratingCount >= 3 && areaScore.topTags && areaScore.topTags.length > 0 && (
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Top features reported</span>
-                <div className="flex gap-1.5 flex-wrap">
-                  {areaScore.topTags.map((t: string) => (
-                    <span key={t} className="text-[10px] font-bold bg-gray-100 text-gray-655 px-2 py-0.5 rounded-full">
-                      {t}
-                    </span>
-                  ))}
+            {areaScore &&
+              areaScore.ratingCount >= 3 &&
+              areaScore.topTags &&
+              areaScore.topTags.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">
+                    Top features reported
+                  </span>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {areaScore.topTags.map((t: string) => (
+                      <span
+                        key={t}
+                        className="text-[10px] font-bold bg-gray-100 text-gray-655 px-2 py-0.5 rounded-full"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             <button
               onClick={() => {
@@ -377,8 +393,14 @@ export default function Map() {
 
       {/* Rate area modal form */}
       {showRateModal && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 960 }} className="bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-5 shadow-2xl max-w-sm w-full flex flex-col gap-4 animate-scale-in" onClick={e => e.stopPropagation()}>
+        <div
+          style={{ position: "absolute", inset: 0, zIndex: 960 }}
+          className="bg-black/40 flex items-center justify-center p-4"
+        >
+          <div
+            className="bg-white rounded-3xl p-5 shadow-2xl max-w-sm w-full flex flex-col gap-4 animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="font-extrabold text-sm text-gray-900">Rate this Area</h3>
             <p className="text-xs text-gray-550 leading-relaxed -mt-2">
               Rate your current location. Please be honest to support community helpers.
@@ -392,7 +414,9 @@ export default function Map() {
 
             {/* 1-10 selector grid */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Select Safety Score (1-10)</span>
+              <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">
+                Select Safety Score (1-10)
+              </span>
               <div className="grid grid-cols-5 gap-1.5">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
                   <button
@@ -412,7 +436,9 @@ export default function Map() {
 
             {/* Tags checkboxes */}
             <div className="flex flex-col gap-1.5 mt-1">
-              <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Features tags (Optional)</span>
+              <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">
+                Features tags (Optional)
+              </span>
               <div className="flex flex-wrap gap-1.5">
                 {tagsPool.map((tag) => (
                   <button
@@ -458,23 +484,38 @@ export default function Map() {
 
       {/* Selected Safe Space Detail Popup */}
       {selectedSpace && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 910 }} className="bg-black/35 flex items-end justify-center p-4" onClick={() => setSelectedSpace(null)}>
-          <div className="bg-white rounded-t-3xl rounded-b-xl p-5 shadow-2xl w-full max-w-sm flex flex-col gap-3.5 animate-slide-up" onClick={e => e.stopPropagation()}>
+        <div
+          style={{ position: "absolute", inset: 0, zIndex: 910 }}
+          className="bg-black/35 flex items-end justify-center p-4"
+          onClick={() => setSelectedSpace(null)}
+        >
+          <div
+            className="bg-white rounded-t-3xl rounded-b-xl p-5 shadow-2xl w-full max-w-sm flex flex-col gap-3.5 animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                <span
+                  className="material-symbols-outlined text-2xl"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
                   store
                 </span>
               </div>
               <div className="flex-grow">
-                <h3 className="font-extrabold text-sm text-gray-900 leading-none">{selectedSpace.name}</h3>
+                <h3 className="font-extrabold text-sm text-gray-900 leading-none">
+                  {selectedSpace.name}
+                </h3>
                 <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full inline-block mt-1 font-semibold font-sans">
                   {selectedSpace.type.replace("_", " ")} • {selectedSpace.distance}m away
                 </span>
               </div>
             </div>
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 flex items-start gap-2">
-              <span className="material-symbols-outlined text-emerald-600 text-base shrink-0 mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span
+                className="material-symbols-outlined text-emerald-600 text-base shrink-0 mt-0.5"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
                 verified_user
               </span>
               <p className="text-[10px] text-emerald-800 font-bold leading-normal">
@@ -503,16 +544,28 @@ export default function Map() {
 
       {/* Selected GA Detail Popup */}
       {selectedGA && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 910 }} className="bg-black/35 flex items-end justify-center p-4" onClick={() => setSelectedGA(null)}>
-          <div className="bg-white rounded-t-3xl rounded-b-xl p-5 shadow-2xl w-full max-w-sm flex flex-col gap-3.5 animate-slide-up" onClick={e => e.stopPropagation()}>
+        <div
+          style={{ position: "absolute", inset: 0, zIndex: 910 }}
+          className="bg-black/35 flex items-end justify-center p-4"
+          onClick={() => setSelectedGA(null)}
+        >
+          <div
+            className="bg-white rounded-t-3xl rounded-b-xl p-5 shadow-2xl w-full max-w-sm flex flex-col gap-3.5 animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                <span
+                  className="material-symbols-outlined text-2xl"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
                   security
                 </span>
               </div>
               <div className="flex-grow">
-                <h3 className="font-extrabold text-sm text-gray-900 leading-none">{selectedGA.name}</h3>
+                <h3 className="font-extrabold text-sm text-gray-900 leading-none">
+                  {selectedGA.name}
+                </h3>
                 <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full inline-block mt-1 font-semibold font-sans">
                   Verified Guardian Angel • {Math.round(selectedGA.distance)}m away
                 </span>
@@ -521,11 +574,15 @@ export default function Map() {
             <div className="flex justify-between items-center bg-gray-50 border border-gray-150 rounded-xl p-3">
               <div className="text-center flex-1 border-r border-gray-200">
                 <p className="text-[9px] uppercase font-bold text-gray-400">Rating</p>
-                <p className="text-base font-black text-amber-600 mt-0.5">⭐ {selectedGA.rating.toFixed(1)}</p>
+                <p className="text-base font-black text-amber-600 mt-0.5">
+                  ⭐ {selectedGA.rating.toFixed(1)}
+                </p>
               </div>
               <div className="text-center flex-1">
                 <p className="text-[9px] uppercase font-bold text-gray-400">Responses</p>
-                <p className="text-base font-black text-gray-800 mt-0.5">{selectedGA.responseCount} times</p>
+                <p className="text-base font-black text-gray-800 mt-0.5">
+                  {selectedGA.responseCount} times
+                </p>
               </div>
             </div>
             <button

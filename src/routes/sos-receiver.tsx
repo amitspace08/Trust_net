@@ -96,7 +96,7 @@ function SosReceiverPage() {
   useEffect(() => {
     if (receiverState !== "alert") return;
     if (!isLayer3) return;
-    
+
     if (responseWindow <= 0) {
       handleDeclineRequest(); // auto-decline on timeout
       return;
@@ -167,7 +167,7 @@ function SosReceiverPage() {
     try {
       await acknowledgeLayer3("amit123", responderUID);
       console.log("Firebase: Acknowledged Layer 3 Alert");
-      
+
       // Update local storage so checkResponder updates local states if needed
       const raw = localStorage.getItem("trustnet_sos_state");
       const currentState = raw ? JSON.parse(raw) : {};
@@ -228,12 +228,14 @@ function SosReceiverPage() {
               You helped someone feel safer today. Thank you.
             </h1>
             <p className="text-xs text-gray-500 font-semibold mt-2.5 leading-relaxed font-sans">
-              Your swift response as a community helper makes a meaningful difference in our network.
+              Your swift response as a community helper makes a meaningful difference in our
+              network.
             </p>
           </div>
           <div className="bg-white border border-gray-150 rounded-2xl p-4.5 shadow-sm">
             <p className="text-[11px] text-gray-655 leading-relaxed italic">
-              "TrustNet functions because neighbors look out for one another. You provided reassurance when it mattered most."
+              "TrustNet functions because neighbors look out for one another. You provided
+              reassurance when it mattered most."
             </p>
           </div>
         </div>
@@ -260,7 +262,8 @@ function SosReceiverPage() {
           </span>
           <h2 className="text-base font-extrabold text-gray-800">Request Declined</h2>
           <p className="text-xs text-gray-500 leading-normal font-sans">
-            Declining safety request. Alerting next ranked responder in the safety graph. Returning to dashboard...
+            Declining safety request. Alerting next ranked responder in the safety graph. Returning
+            to dashboard...
           </p>
         </div>
       </div>
@@ -283,7 +286,8 @@ function SosReceiverPage() {
           </div>
           <div className="bg-white border border-gray-150 rounded-2xl p-5 shadow-sm">
             <p className="text-xs text-gray-655 leading-relaxed">
-              The emergency broadcast has been successfully cancelled. Your alert access and route navigation keys have been safely cleared.
+              The emergency broadcast has been successfully cancelled. Your alert access and route
+              navigation keys have been safely cleared.
             </p>
           </div>
         </div>
@@ -313,7 +317,9 @@ function SosReceiverPage() {
           <div>
             <h2 className="text-sm font-bold text-gray-900">Priya Sharma</h2>
             <p className="text-xs text-gray-500">Trust Score: 98</p>
-            <p className={`text-xs font-semibold mt-0.5 ${isLayer2 ? "text-indigo-650" : "text-red-600"}`}>
+            <p
+              className={`text-xs font-semibold mt-0.5 ${isLayer2 ? "text-indigo-650" : "text-red-600"}`}
+            >
               Safety Status: {isLayer2 ? "L2 Escalated" : "Distressed"}
             </p>
           </div>
@@ -343,7 +349,9 @@ function SosReceiverPage() {
       {/* Mobile Sticky Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center justify-between px-4 h-16 w-full md:hidden text-gray-800">
         <div className="flex items-center gap-2.5">
-          <span className={`material-symbols-outlined ${isLayer3 ? "text-amber-500 animate-pulse" : isLayer2 ? "text-indigo-600 animate-pulse" : "text-red-600 animate-bounce"}`}>
+          <span
+            className={`material-symbols-outlined ${isLayer3 ? "text-amber-500 animate-pulse" : isLayer2 ? "text-indigo-600 animate-pulse" : "text-red-600 animate-bounce"}`}
+          >
             {isLayer3 ? "shield_with_heart" : isLayer2 ? "security" : "warning"}
           </span>
           <span className="font-extrabold text-sm uppercase tracking-wide">
@@ -380,12 +388,19 @@ function SosReceiverPage() {
                   : "bg-red-600/95 border-red-500"
             }`}
           >
-            <span className="material-symbols-outlined text-2xl animate-bounce" style={{ fontVariationSettings: (isLayer3 || isLayer2) ? "'FILL' 1" : undefined }}>
+            <span
+              className="material-symbols-outlined text-2xl animate-bounce"
+              style={{ fontVariationSettings: isLayer3 || isLayer2 ? "'FILL' 1" : undefined }}
+            >
               {isLayer3 ? "shield_with_heart" : isLayer2 ? "security" : "warning"}
             </span>
             <div className="flex-1 min-w-0">
               <h2 className="font-extrabold text-sm uppercase tracking-wide truncate">
-                {isLayer3 ? "Guardian Angel Alert" : isLayer2 ? "Friends-of-Friends Alert" : "Emergency SOS Broadcast"}
+                {isLayer3
+                  ? "Guardian Angel Alert"
+                  : isLayer2
+                    ? "Friends-of-Friends Alert"
+                    : "Emergency SOS Broadcast"}
               </h2>
               <p className="text-[11px] opacity-90 mt-0.5 font-medium leading-relaxed font-sans">
                 {isLayer3
@@ -399,15 +414,13 @@ function SosReceiverPage() {
         </div>
 
         {/* Distressed User Pin (Priya Sharma) - Fuzzy Map for Layer 2 & Layer 3 privacy (Task 1 S3.2) */}
-        {(isLayer2 || (isLayer3 && receiverState !== "responding")) ? (
+        {isLayer2 || (isLayer3 && receiverState !== "responding") ? (
           <>
             {/* Transparent Circular Area showing 200m Privacy Radius */}
             <div
               style={{ top: "45%", left: "50%" }}
               className={`absolute z-10 w-36 h-36 -ml-18 -mt-18 rounded-full border-2 bg-opacity-10 pointer-events-none animate-pulse ${
-                isLayer3
-                  ? "border-amber-500 bg-amber-500/10"
-                  : "border-indigo-500 bg-indigo-500/10"
+                isLayer3 ? "border-amber-500 bg-amber-500/10" : "border-indigo-500 bg-indigo-500/10"
               }`}
             />
             {/* Fuzzy offset avatar */}
@@ -441,9 +454,11 @@ function SosReceiverPage() {
                 className="w-full h-full rounded-full object-cover"
               />
             </div>
-            <span className={`absolute inset-0 rounded-full border-4 animate-ping opacity-35 ${
-              isLayer3 ? "border-amber-600" : "border-red-650"
-            }`} />
+            <span
+              className={`absolute inset-0 rounded-full border-4 animate-ping opacity-35 ${
+                isLayer3 ? "border-amber-600" : "border-red-650"
+              }`}
+            />
           </div>
         )}
 
@@ -470,7 +485,11 @@ function SosReceiverPage() {
         >
           <div
             className={`w-full h-full rounded-full flex items-center justify-center font-extrabold text-sm ${
-              isLayer3 ? "bg-amber-50 text-amber-600" : isLayer2 ? "bg-indigo-55 text-indigo-700" : "bg-blue-100 text-blue-600"
+              isLayer3
+                ? "bg-amber-50 text-amber-600"
+                : isLayer2
+                  ? "bg-indigo-55 text-indigo-700"
+                  : "bg-blue-100 text-blue-600"
             }`}
           >
             <span
@@ -493,22 +512,29 @@ function SosReceiverPage() {
         <div className="absolute bottom-4 left-4 right-4 z-30 bg-white rounded-2xl shadow-2xl border border-gray-200 p-5 flex flex-col gap-4 max-w-md mx-auto pointer-events-auto">
           {/* Trust Signal Badge — Layer 2 or Layer 3 */}
           {(isLayer2 || isLayer3) && (
-            <div className={`flex justify-between items-center px-3 py-2 rounded-xl border ${
-              isLayer3
-                ? "bg-amber-50/60 border-amber-200"
-                : "bg-indigo-50/60 border-indigo-105"
-            }`}>
-              <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
-                isLayer3 ? "text-amber-800" : "text-indigo-750"
-              }`}>
-                <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <div
+              className={`flex justify-between items-center px-3 py-2 rounded-xl border ${
+                isLayer3 ? "bg-amber-50/60 border-amber-200" : "bg-indigo-50/60 border-indigo-105"
+              }`}
+            >
+              <span
+                className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
+                  isLayer3 ? "text-amber-800" : "text-indigo-750"
+                }`}
+              >
+                <span
+                  className="material-symbols-outlined text-xs"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
                   {isLayer3 ? "shield_with_heart" : "group"}
                 </span>
                 {isLayer3 ? "Guardian Angel Alert" : `Sent as friend of ${mutualContactName}`}
               </span>
-              <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${
-                isLayer3 ? "text-amber-700 bg-amber-100" : "text-indigo-650 bg-indigo-100"
-              }`}>
+              <span
+                className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${
+                  isLayer3 ? "text-amber-700 bg-amber-100" : "text-indigo-650 bg-indigo-100"
+                }`}
+              >
                 {isLayer3 ? "Layer 3" : "Layer 2"} Alert
               </span>
             </div>
@@ -554,7 +580,8 @@ function SosReceiverPage() {
                   <div>
                     <h4 className="font-bold text-xs text-amber-900">Guardian Directions</h4>
                     <p className="text-[10px] text-amber-900/80 leading-relaxed mt-0.5 font-sans">
-                      Go straight for 200m, then take the first right onto MG Road. Priya is approximately 400m ahead.
+                      Go straight for 200m, then take the first right onto MG Road. Priya is
+                      approximately 400m ahead.
                     </p>
                   </div>
                 </div>
@@ -567,7 +594,8 @@ function SosReceiverPage() {
                   <div>
                     <h4 className="font-bold text-xs text-indigo-900">Privacy Notice</h4>
                     <p className="text-[10px] text-indigo-900/80 leading-relaxed mt-0.5 font-sans">
-                      Approximate location shown for privacy purposes. A 200m circular search boundary has been highlighted.
+                      Approximate location shown for privacy purposes. A 200m circular search
+                      boundary has been highlighted.
                     </p>
                   </div>
                 </div>
@@ -580,7 +608,8 @@ function SosReceiverPage() {
                   <div>
                     <h4 className="font-bold text-xs text-blue-900">Directions</h4>
                     <p className="text-[10px] text-blue-900/80 leading-relaxed mt-0.5 font-sans">
-                      Head North on MG Road towards Residency Road. Proceed 300m, then turn left at MG Road Metro Hub.
+                      Head North on MG Road towards Residency Road. Proceed 300m, then turn left at
+                      MG Road Metro Hub.
                     </p>
                   </div>
                 </div>
@@ -609,10 +638,10 @@ function SosReceiverPage() {
               <div className="flex items-center gap-3">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${
-                    isLayer3 
-                      ? "bg-amber-50 border-amber-100 text-amber-600" 
-                      : isLayer2 
-                        ? "bg-indigo-50 border-indigo-100 text-indigo-700" 
+                    isLayer3
+                      ? "bg-amber-50 border-amber-100 text-amber-600"
+                      : isLayer2
+                        ? "bg-indigo-50 border-indigo-100 text-indigo-700"
                         : "bg-red-100 border-red-50 text-red-600"
                   }`}
                 >
@@ -706,7 +735,8 @@ function SosReceiverPage() {
                 "You are registered as a community helper. Someone nearby needs assistance."
               </p>
               <p className="text-[10px] text-gray-400 font-semibold leading-normal">
-                By confirming, Priya Sharma and her guardians will see that you are responding. Your location will be updated on their map.
+                By confirming, Priya Sharma and her guardians will see that you are responding. Your
+                location will be updated on their map.
               </p>
             </div>
 

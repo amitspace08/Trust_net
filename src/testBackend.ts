@@ -19,10 +19,7 @@ async function test() {
       return;
     }
 
-    const requestId = await sendTrustRequest(
-      "YOUR_UID",
-      user.id
-    );
+    const requestId = await sendTrustRequest("YOUR_UID", user.id);
 
     console.log("Request Created:", requestId);
 
@@ -33,7 +30,6 @@ async function test() {
     const contacts = await getLayer1Contacts("YOUR_UID");
 
     console.log(contacts);
-
   } catch (err) {
     console.error(err);
   }

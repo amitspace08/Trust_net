@@ -23,7 +23,9 @@ function ProfilePage() {
         const parsed = JSON.parse(raw);
         setIsGuardianAngel(parsed.registered === true);
       }
-    } catch { /* fallback */ }
+    } catch {
+      /* fallback */
+    }
   }, []);
 
   // Sync state with localStorage
@@ -374,7 +376,12 @@ function ProfilePage() {
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-white text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>security</span>
+                <span
+                  className="material-symbols-outlined text-white text-2xl"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  security
+                </span>
               </div>
               <div>
                 <h3 className="font-bold text-sm text-white">
@@ -389,9 +396,13 @@ function ProfilePage() {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {isGuardianAngel && (
-                <span className="text-[9px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">REGISTERED</span>
+                <span className="text-[9px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">
+                  REGISTERED
+                </span>
               )}
-              <span className="material-symbols-outlined text-white group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+              <span className="material-symbols-outlined text-white group-hover:translate-x-0.5 transition-transform">
+                arrow_forward
+              </span>
             </div>
           </Link>
         </section>

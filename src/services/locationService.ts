@@ -27,24 +27,20 @@ import { db } from "../firebase/firebase";
 // Update My Location
 // ===============================
 
-export async function updateMyLocation(
-  uid: string,
-  lat: number,
-  lng: number
-) {
+export async function updateMyLocation(uid: string, lat: number, lng: number) {
   try {
     await setDoc(
       doc(db, "user_locations", uid),
       {
         uid: uid,
         geopoint: new GeoPoint(lat, lng),
-        latitude: lat,                 // compatibility field
-        longitude: lng,                // compatibility field
+        latitude: lat, // compatibility field
+        longitude: lng, // compatibility field
         timestamp: serverTimestamp(),
         sharingEnabled: true,
         available: true,
       },
-      { merge: true }
+      { merge: true },
     );
   } catch (err) {
     console.error(err);
@@ -65,7 +61,7 @@ export async function stopSharing(uid: string) {
         available: false,
         timestamp: serverTimestamp(),
       },
-      { merge: true }
+      { merge: true },
     );
   } catch (err) {
     console.error(err);
@@ -77,16 +73,11 @@ export async function stopSharing(uid: string) {
 // Fetch Contact Locations
 // ===============================
 
-export async function getContactLocations(
-  uidList: string[]
-) {
+export async function getContactLocations(uidList: string[]) {
   try {
     if (uidList.length === 0) return [];
 
-    const q = query(
-      collection(db, "user_locations"),
-      where("uid", "in", uidList)
-    );
+    const q = query(collection(db, "user_locations"), where("uid", "in", uidList));
 
     const snapshot = await getDocs(q);
 

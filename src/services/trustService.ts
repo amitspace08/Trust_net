@@ -11,8 +11,6 @@ import {
   GeoPoint,
 } from "firebase/firestore";
 
-
-
 import { db } from "../firebase/firebase";
 
 /**
@@ -30,10 +28,7 @@ import { db } from "../firebase/firebase";
 // =========================
 // Send Trust Request
 // =========================
-export async function sendTrustRequest(
-  fromUID: string,
-  toUID: string
-) {
+export async function sendTrustRequest(fromUID: string, toUID: string) {
   try {
     if (fromUID === toUID) {
       throw new Error("Cannot send request to yourself.");
@@ -43,7 +38,7 @@ export async function sendTrustRequest(
     const q = query(
       collection(db, "trust_relationships"),
       where("userA", "==", fromUID),
-      where("userB", "==", toUID)
+      where("userB", "==", toUID),
     );
 
     const existing = await getDocs(q);
@@ -52,15 +47,12 @@ export async function sendTrustRequest(
       throw new Error("Trust request already exists.");
     }
 
-    const docRef = await addDoc(
-      collection(db, "trust_relationships"),
-      {
-        userA: fromUID,
-        userB: toUID,
-        status: "pending",
-        createdAt: serverTimestamp(),
-      }
-    );
+    const docRef = await addDoc(collection(db, "trust_relationships"), {
+      userA: fromUID,
+      userB: toUID,
+      status: "pending",
+      createdAt: serverTimestamp(),
+    });
 
     return docRef.id;
   } catch (error) {
@@ -72,16 +64,11 @@ export async function sendTrustRequest(
 // =========================
 // Accept Request
 // =========================
-export async function acceptRequest(
-  requestID: string
-) {
+export async function acceptRequest(requestID: string) {
   try {
-    await updateDoc(
-      doc(db, "trust_relationships", requestID),
-      {
-        status: "accepted",
-      }
-    );
+    await updateDoc(doc(db, "trust_relationships", requestID), {
+      status: "accepted",
+    });
   } catch (error) {
     console.error(error);
     throw error;
@@ -91,16 +78,11 @@ export async function acceptRequest(
 // =========================
 // Reject Request
 // =========================
-export async function rejectRequest(
-  requestID: string
-) {
+export async function rejectRequest(requestID: string) {
   try {
-    await updateDoc(
-      doc(db, "trust_relationships", requestID),
-      {
-        status: "rejected",
-      }
-    );
+    await updateDoc(doc(db, "trust_relationships", requestID), {
+      status: "rejected",
+    });
   } catch (error) {
     console.error(error);
     throw error;
@@ -110,14 +92,9 @@ export async function rejectRequest(
 // =========================
 // Layer 1 Contacts
 // =========================
-export async function getLayer1Contacts(
-  userUID: string
-) {
+export async function getLayer1Contacts(userUID: string) {
   try {
-    const q = query(
-      collection(db, "trust_relationships"),
-      where("status", "==", "accepted")
-    );
+    const q = query(collection(db, "trust_relationships"), where("status", "==", "accepted"));
 
     const snapshot = await getDocs(q);
 
@@ -126,11 +103,7 @@ export async function getLayer1Contacts(
         id: doc.id,
         ...(doc.data() as any),
       }))
-      .filter(
-        (item: any) =>
-          item.userA === userUID ||
-          item.userB === userUID
-      );
+      .filter((item: any) => item.userA === userUID || item.userB === userUID);
 
     return contacts;
   } catch (error) {
@@ -142,14 +115,9 @@ export async function getLayer1Contacts(
 // =========================
 // Search User By Phone
 // =========================
-export async function searchUserByPhone(
-  phone: string
-) {
+export async function searchUserByPhone(phone: string) {
   try {
-    const q = query(
-      collection(db, "users"),
-      where("phone_no", "==", phone)
-    );
+    const q = query(collection(db, "users"), where("phone_no", "==", phone));
 
     const snapshot = await getDocs(q);
 
@@ -170,9 +138,7 @@ export async function searchUserByPhone(
 // =========================
 // Optional Helper
 // =========================
-export async function getUser(
-  uid: string
-) {
+export async function getUser(uid: string) {
   try {
     const ref = doc(db, "users", uid);
 
@@ -196,14 +162,12 @@ export async function getUser(
 // Layer 2 Candidates
 // =========================
 
-export async function getLayer2Candidates(
-  uid: string
-) {
+export async function getLayer2Candidates(uid: string) {
   try {
     const layer1 = await getLayer1Contacts(uid);
 
     const layer1UIDs = layer1.map((contact: any) =>
-      contact.userA === uid ? contact.userB : contact.userA
+      contact.userA === uid ? contact.userB : contact.userA,
     );
 
     const candidateMap = new Map<
@@ -218,15 +182,9 @@ export async function getLayer2Candidates(
       const contacts = await getLayer1Contacts(layer1UID);
 
       for (const contact of contacts as any[]) {
-        const candidateUID =
-          contact.userA === layer1UID
-            ? contact.userB
-            : contact.userA;
+        const candidateUID = contact.userA === layer1UID ? contact.userB : contact.userA;
 
-        if (
-          candidateUID !== uid &&
-          !layer1UIDs.includes(candidateUID)
-        ) {
+        if (candidateUID !== uid && !layer1UIDs.includes(candidateUID)) {
           if (!candidateMap.has(candidateUID)) {
             candidateMap.set(candidateUID, {
               uid: candidateUID,
@@ -238,7 +196,6 @@ export async function getLayer2Candidates(
     }
 
     return Array.from(candidateMap.values());
-
   } catch (error) {
     console.error(error);
     throw error;
@@ -249,12 +206,7 @@ export async function getLayer2Candidates(
 // Haversine Distance (meters)
 // =========================
 
-function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-) {
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371000; // Earth's radius in meters
 
   const toRadians = (deg: number) => (deg * Math.PI) / 180;
@@ -264,10 +216,7 @@ function calculateDistance(
 
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
@@ -282,22 +231,16 @@ function calculateDistance(
 // Rank Layer 2 Candidates
 // =========================
 
-export async function rankLayer2Candidates(
-  candidateUIDs: any[],
-  distressedLocation: GeoPoint
-) {
+export async function rankLayer2Candidates(candidateUIDs: any[], distressedLocation: GeoPoint) {
   try {
     const ranked = [];
 
     for (const candidate of candidateUIDs) {
-
       const user = await getUser(candidate.uid);
 
       if (!user) continue;
 
-      const locationSnap = await getDoc(
-        doc(db, "user_locations", candidate.uid)
-      );
+      const locationSnap = await getDoc(doc(db, "user_locations", candidate.uid));
 
       if (!locationSnap.exists()) continue;
 
@@ -312,7 +255,7 @@ export async function rankLayer2Candidates(
         distressedLocation.latitude,
         distressedLocation.longitude,
         point.latitude,
-        point.longitude
+        point.longitude,
       );
 
       ranked.push({
@@ -327,7 +270,6 @@ export async function rankLayer2Candidates(
     ranked.sort((a, b) => a.distance - b.distance);
 
     return ranked.slice(0, 10);
-
   } catch (error) {
     console.error(error);
     throw error;
@@ -338,26 +280,15 @@ export async function rankLayer2Candidates(
 // Mutual Connection
 // =========================
 
-export async function getMutualConnection(
-  userAUID: string,
-  userBUID: string
-) {
+export async function getMutualConnection(userAUID: string, userBUID: string) {
   try {
+    const layer2 = await getLayer2Candidates(userAUID);
 
-    const layer2 =
-      await getLayer2Candidates(userAUID);
-
-    const match = layer2.find(
-      (candidate) =>
-        candidate.uid === userBUID
-    );
+    const match = layer2.find((candidate) => candidate.uid === userBUID);
 
     if (!match) return null;
 
-    return await getUser(
-      match.mutualConnectionUID
-    );
-
+    return await getUser(match.mutualConnectionUID);
   } catch (error) {
     console.error(error);
     throw error;
@@ -368,17 +299,12 @@ export async function getMutualConnection(
 // Find Guardian Angels
 // ======================================
 
-export async function findGuardianAngels(
-  location: GeoPoint,
-  radiusMeters: number = 500
-) {
-
+export async function findGuardianAngels(location: GeoPoint, radiusMeters: number = 500) {
   try {
-
     const q = query(
       collection(db, "users"),
       where("isGuardianAngel", "==", true),
-      where("guardianAvailable", "==", true)
+      where("guardianAvailable", "==", true),
     );
 
     const snapshot = await getDocs(q);
@@ -386,12 +312,9 @@ export async function findGuardianAngels(
     const guardians = [];
 
     for (const document of snapshot.docs) {
-
       const user = document.data();
 
-      const locationDoc = await getDoc(
-        doc(db, "user_locations", document.id)
-      );
+      const locationDoc = await getDoc(doc(db, "user_locations", document.id));
 
       if (!locationDoc.exists()) continue;
 
@@ -401,49 +324,30 @@ export async function findGuardianAngels(
         location.latitude,
         location.longitude,
         point.latitude,
-        point.longitude
+        point.longitude,
       );
 
       if (distance <= radiusMeters) {
-
         guardians.push({
-
           uid: document.id,
 
           distance,
 
           ...user,
-
         });
-
       }
-
     }
 
-    guardians.sort(
-      (a, b) => a.distance - b.distance
-    );
+    guardians.sort((a, b) => a.distance - b.distance);
 
-    if (
-      guardians.length === 0 &&
-      radiusMeters < 1000
-    ) {
-
-      return await findGuardianAngels(
-        location,
-        radiusMeters + 250
-      );
-
+    if (guardians.length === 0 && radiusMeters < 1000) {
+      return await findGuardianAngels(location, radiusMeters + 250);
     }
 
     return guardians;
-
   } catch (err) {
-
     console.error(err);
 
     throw err;
-
   }
-
 }

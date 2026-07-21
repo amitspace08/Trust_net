@@ -38,7 +38,9 @@ function GuardianPage() {
     try {
       const raw = localStorage.getItem("trustnet_guardian_profile");
       if (raw) setProfile(JSON.parse(raw));
-    } catch { /* fallback */ }
+    } catch {
+      /* fallback */
+    }
   }, []);
 
   const getUid = () => {
@@ -107,11 +109,18 @@ function GuardianPage() {
       <nav className="hidden md:flex flex-col bg-white text-gray-800 h-full rounded-r-2xl shadow-sm border-r border-gray-150 w-72 max-w-[80vw] p-5 fixed left-0 top-0 z-50">
         <div className="flex items-center gap-4 mb-8 pt-4">
           <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-            <span className="material-symbols-outlined text-amber-700 text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>security</span>
+            <span
+              className="material-symbols-outlined text-amber-700 text-2xl"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              security
+            </span>
           </div>
           <div>
             <h2 className="text-sm font-bold text-gray-900">Guardian Angel</h2>
-            <p className={`text-xs font-semibold mt-0.5 ${profile.registered ? (profile.available ? "text-emerald-600" : "text-gray-400") : "text-gray-400"}`}>
+            <p
+              className={`text-xs font-semibold mt-0.5 ${profile.registered ? (profile.available ? "text-emerald-600" : "text-gray-400") : "text-gray-400"}`}
+            >
               {profile.registered ? (profile.available ? "On Duty" : "Off Duty") : "Not registered"}
             </p>
           </div>
@@ -119,8 +128,16 @@ function GuardianPage() {
         <ul className="flex flex-col gap-1.5 mt-auto">
           {bottomNav.map((item) => (
             <li key={item.to}>
-              <Link to={item.to as "/"} className={`flex items-center gap-3 px-4 py-2.5 rounded-full transition-all text-sm font-medium ${item.active ? "bg-amber-50 text-amber-700 font-bold" : "text-gray-600 hover:bg-gray-100"}`}>
-                <span className="material-symbols-outlined text-lg" style={item.active ? { fontVariationSettings: "'FILL' 1" } : undefined}>{item.icon}</span>
+              <Link
+                to={item.to as "/"}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-full transition-all text-sm font-medium ${item.active ? "bg-amber-50 text-amber-700 font-bold" : "text-gray-600 hover:bg-gray-100"}`}
+              >
+                <span
+                  className="material-symbols-outlined text-lg"
+                  style={item.active ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                >
+                  {item.icon}
+                </span>
                 {item.label}
               </Link>
             </li>
@@ -131,10 +148,18 @@ function GuardianPage() {
       {/* Mobile Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-200 flex justify-between items-center px-4 h-16 w-full md:hidden">
         <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-amber-600 text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>security</span>
+          <span
+            className="material-symbols-outlined text-amber-600 text-2xl"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            security
+          </span>
           <h1 className="text-lg font-bold text-gray-900 tracking-tight">Guardian Angel</h1>
         </div>
-        <Link to="/notifications" className="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 transition">
+        <Link
+          to="/notifications"
+          className="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 transition"
+        >
           <span className="material-symbols-outlined">notifications</span>
         </Link>
       </header>
@@ -146,12 +171,18 @@ function GuardianPage() {
             {/* Hero Banner */}
             <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-7 text-white flex flex-col gap-4 shadow-xl">
               <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
-                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield_with_heart</span>
+                <span
+                  className="material-symbols-outlined text-4xl"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  shield_with_heart
+                </span>
               </div>
               <div>
                 <h1 className="text-2xl font-black tracking-tight">Become a Guardian Angel</h1>
                 <p className="text-sm opacity-90 mt-2 leading-relaxed">
-                  Volunteer to receive Layer 3 SOS alerts when someone nearby needs urgent help and no one else has responded.
+                  Volunteer to receive Layer 3 SOS alerts when someone nearby needs urgent help and
+                  no one else has responded.
                 </p>
               </div>
             </div>
@@ -164,14 +195,28 @@ function GuardianPage() {
               </h2>
               <ul className="flex flex-col gap-3">
                 {[
-                  { icon: "notifications_active", text: "Receive Layer 3 SOS alerts when you are nearby and available" },
-                  { icon: "location_on", text: "Your approximate location is shared to match you to nearby incidents" },
-                  { icon: "toggle_on", text: "Full ON/OFF control — no obligation when you are off-duty" },
+                  {
+                    icon: "notifications_active",
+                    text: "Receive Layer 3 SOS alerts when you are nearby and available",
+                  },
+                  {
+                    icon: "location_on",
+                    text: "Your approximate location is shared to match you to nearby incidents",
+                  },
+                  {
+                    icon: "toggle_on",
+                    text: "Full ON/OFF control — no obligation when you are off-duty",
+                  },
                   { icon: "star", text: "Build a community response rating visible in TrustNet" },
-                  { icon: "privacy_tip", text: "Your details are never shared until you confirm you are responding" },
+                  {
+                    icon: "privacy_tip",
+                    text: "Your details are never shared until you confirm you are responding",
+                  },
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-gray-700">
-                    <span className="material-symbols-outlined text-amber-500 text-base shrink-0 mt-0.5">{item.icon}</span>
+                    <span className="material-symbols-outlined text-amber-500 text-base shrink-0 mt-0.5">
+                      {item.icon}
+                    </span>
                     {item.text}
                   </li>
                 ))}
@@ -188,7 +233,8 @@ function GuardianPage() {
                 className="mt-0.5 w-5 h-5 accent-amber-600 shrink-0"
               />
               <span className="text-sm text-gray-800 leading-relaxed font-medium">
-                I understand my role as a Guardian Angel and agree to respond to nearby SOS alerts when I am available.
+                I understand my role as a Guardian Angel and agree to respond to nearby SOS alerts
+                when I am available.
               </span>
             </label>
 
@@ -199,7 +245,12 @@ function GuardianPage() {
               disabled={!agreed || registering}
               className={`w-full py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98] ${agreed ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
             >
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>{registering ? "progress_activity" : "security"}</span>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                {registering ? "progress_activity" : "security"}
+              </span>
               {registering ? "Registering..." : "Register as Guardian Angel"}
             </button>
           </div>
@@ -209,13 +260,23 @@ function GuardianPage() {
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h1 className="text-xl font-black text-gray-900 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-amber-500 text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>security</span>
+                  <span
+                    className="material-symbols-outlined text-amber-500 text-2xl"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    security
+                  </span>
                   Guardian Dashboard
                 </h1>
                 <p className="text-xs text-gray-500 mt-0.5">Your community helper profile</p>
               </div>
               <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                <span
+                  className="material-symbols-outlined text-xs"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  verified
+                </span>
                 Verified Guardian Angel
               </span>
             </div>
@@ -231,13 +292,17 @@ function GuardianPage() {
             >
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
-                  <p className={`text-[10px] font-bold uppercase tracking-widest ${profile.available ? "text-white/70" : "text-gray-400"}`}>
+                  <p
+                    className={`text-[10px] font-bold uppercase tracking-widest ${profile.available ? "text-white/70" : "text-gray-400"}`}
+                  >
                     Availability Status
                   </p>
                   <h2 className="text-3xl font-black mt-1 tracking-tight">
                     {profile.available ? "ON DUTY" : "OFF DUTY"}
                   </h2>
-                  <p className={`text-xs mt-1.5 leading-relaxed ${profile.available ? "text-white/80" : "text-gray-500"}`}>
+                  <p
+                    className={`text-xs mt-1.5 leading-relaxed ${profile.available ? "text-white/80" : "text-gray-500"}`}
+                  >
                     {profile.available
                       ? "You will receive Layer 3 SOS alerts when nearby"
                       : "Toggle ON to start receiving SOS alerts in your area"}
@@ -250,15 +315,22 @@ function GuardianPage() {
                   aria-checked={profile.available}
                   onClick={toggleAvailability}
                   className={`w-20 h-10 rounded-full relative transition-all duration-300 shadow-inner shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                    profile.available ? "bg-white/30 focus:ring-white" : "bg-gray-200 focus:ring-gray-400"
+                    profile.available
+                      ? "bg-white/30 focus:ring-white"
+                      : "bg-gray-200 focus:ring-gray-400"
                   }`}
                 >
                   <span
                     className={`absolute top-1 w-8 h-8 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center ${
-                      profile.available ? "left-11 bg-white text-emerald-600" : "left-1 bg-white text-gray-400"
+                      profile.available
+                        ? "left-11 bg-white text-emerald-600"
+                        : "left-1 bg-white text-gray-400"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    <span
+                      className="material-symbols-outlined text-sm"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
                       {profile.available ? "check_circle" : "cancel"}
                     </span>
                   </span>
@@ -268,7 +340,9 @@ function GuardianPage() {
               {profile.available && (
                 <div className="flex items-center gap-2.5 bg-white/15 rounded-xl px-3.5 py-2.5">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0"></span>
-                  <span className="text-xs font-semibold text-white">Monitoring SOS alerts within 500m radius</span>
+                  <span className="text-xs font-semibold text-white">
+                    Monitoring SOS alerts within 500m radius
+                  </span>
                 </div>
               )}
             </div>
@@ -276,16 +350,46 @@ function GuardianPage() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: "Responses", value: String(profile.totalResponses), icon: "emergency_share", bg: "bg-emerald-50", text: "text-emerald-600" },
-                { label: "Star Rating", value: `${profile.rating}★`, icon: "star", bg: "bg-amber-50", text: "text-amber-600" },
-                { label: "Community", value: "Top 5%", icon: "workspace_premium", bg: "bg-purple-50", text: "text-purple-600" },
+                {
+                  label: "Responses",
+                  value: String(profile.totalResponses),
+                  icon: "emergency_share",
+                  bg: "bg-emerald-50",
+                  text: "text-emerald-600",
+                },
+                {
+                  label: "Star Rating",
+                  value: `${profile.rating}★`,
+                  icon: "star",
+                  bg: "bg-amber-50",
+                  text: "text-amber-600",
+                },
+                {
+                  label: "Community",
+                  value: "Top 5%",
+                  icon: "workspace_premium",
+                  bg: "bg-purple-50",
+                  text: "text-purple-600",
+                },
               ].map((stat) => (
-                <div key={stat.label} className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col items-center gap-2 shadow-sm text-center">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${stat.bg} ${stat.text}`}>
-                    <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>{stat.icon}</span>
+                <div
+                  key={stat.label}
+                  className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col items-center gap-2 shadow-sm text-center"
+                >
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center ${stat.bg} ${stat.text}`}
+                  >
+                    <span
+                      className="material-symbols-outlined text-lg"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      {stat.icon}
+                    </span>
                   </div>
                   <span className="text-base font-black text-gray-900">{stat.value}</span>
-                  <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide">{stat.label}</span>
+                  <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide">
+                    {stat.label}
+                  </span>
                 </div>
               ))}
             </div>
@@ -304,16 +408,29 @@ function GuardianPage() {
                     className="w-14 h-14 rounded-full object-cover border-2 border-amber-300 shadow"
                   />
                   <span className="absolute -bottom-1 -right-1 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-white flex items-center gap-0.5">
-                    <span className="material-symbols-outlined text-[8px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>GA
+                    <span
+                      className="material-symbols-outlined text-[8px]"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      verified
+                    </span>
+                    GA
                   </span>
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-sm text-gray-900">Rakesh Kumar</p>
                   <div className="flex items-center gap-1 mt-0.5">
                     {"★★★★★".split("").map((s, i) => (
-                      <span key={i} className={`text-xs ${i < Math.round(profile.rating) ? "text-amber-500" : "text-gray-300"}`}>{s}</span>
+                      <span
+                        key={i}
+                        className={`text-xs ${i < Math.round(profile.rating) ? "text-amber-500" : "text-gray-300"}`}
+                      >
+                        {s}
+                      </span>
                     ))}
-                    <span className="text-[9px] text-gray-500 ml-1">{profile.rating} ({profile.totalResponses} responses)</span>
+                    <span className="text-[9px] text-gray-500 ml-1">
+                      {profile.rating} ({profile.totalResponses} responses)
+                    </span>
                   </div>
                   <p className="text-[10px] text-gray-500 mt-0.5">Verified Guardian • 340m away</p>
                 </div>
@@ -328,10 +445,18 @@ function GuardianPage() {
               </h3>
               <ul className="flex flex-col gap-3">
                 {profile.responseHistory.map((r) => (
-                  <li key={r.id} className="flex items-center justify-between gap-3 py-2 border-b border-gray-50 last:border-b-0 last:pb-0">
+                  <li
+                    key={r.id}
+                    className="flex items-center justify-between gap-3 py-2 border-b border-gray-50 last:border-b-0 last:pb-0"
+                  >
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${r.outcome === "Assisted" ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
-                        <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${r.outcome === "Assisted" ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}
+                      >
+                        <span
+                          className="material-symbols-outlined text-sm"
+                          style={{ fontVariationSettings: "'FILL' 1" }}
+                        >
                           {r.outcome === "Assisted" ? "check_circle" : "cancel"}
                         </span>
                       </div>
@@ -340,7 +465,9 @@ function GuardianPage() {
                         <p className="text-[9px] text-gray-400 mt-0.5">{r.date}</p>
                       </div>
                     </div>
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${r.outcome === "Assisted" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+                    <span
+                      className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${r.outcome === "Assisted" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}
+                    >
                       {r.outcome}
                     </span>
                   </li>
@@ -361,8 +488,17 @@ function GuardianPage() {
       {/* Mobile Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 z-40 md:hidden">
         {bottomNav.map((item) => (
-          <Link key={item.to} to={item.to as "/"} className={`flex flex-col items-center gap-0.5 px-3 py-1 ${item.active ? "text-amber-600" : "text-gray-500"}`}>
-            <span className="material-symbols-outlined text-2xl" style={item.active ? { fontVariationSettings: "'FILL' 1" } : undefined}>{item.icon}</span>
+          <Link
+            key={item.to}
+            to={item.to as "/"}
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 ${item.active ? "text-amber-600" : "text-gray-500"}`}
+          >
+            <span
+              className="material-symbols-outlined text-2xl"
+              style={item.active ? { fontVariationSettings: "'FILL' 1" } : undefined}
+            >
+              {item.icon}
+            </span>
             <span className="text-[9px] font-semibold">{item.label}</span>
           </Link>
         ))}

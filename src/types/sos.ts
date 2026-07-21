@@ -1,5 +1,4 @@
 export interface SOSSession {
-
   sessionId: string;
 
   triggeredBy: string;
@@ -15,5 +14,4 @@ export interface SOSSession {
   layer1Alerted: string[];
 
   layer1Acknowledged: string | null;
-
 }

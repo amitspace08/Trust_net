@@ -43,7 +43,7 @@ function HeatmapPage() {
   const SEED_RATINGS: SafetyRating[] = [
     { score: 8, tags: ["Welllit", "Police presence"] },
     { score: 7, tags: ["Welllit", "Crowded"] },
-    { score: 7, tags: ["Police presence"] }
+    { score: 7, tags: ["Police presence"] },
   ];
 
   const TYPES = [
@@ -55,9 +55,10 @@ function HeatmapPage() {
     { id: "other", icon: "more_horiz", label: "Other" },
   ];
 
-  const avgScore = ratings.length > 0
-    ? Number((ratings.reduce((acc, curr) => acc + curr.score, 0) / ratings.length).toFixed(1))
-    : 0;
+  const avgScore =
+    ratings.length > 0
+      ? Number((ratings.reduce((acc, curr) => acc + curr.score, 0) / ratings.length).toFixed(1))
+      : 0;
 
   const getTopTags = () => {
     const tagCounts: Record<string, number> = {};
@@ -338,7 +339,9 @@ function HeatmapPage() {
                       : "bg-gray-400"
               }`}
             >
-              <span className="text-sm font-black">{avgScore > 0 ? avgScore.toFixed(1) : "N/A"}</span>
+              <span className="text-sm font-black">
+                {avgScore > 0 ? avgScore.toFixed(1) : "N/A"}
+              </span>
               <span className="text-[7px] uppercase font-bold tracking-wider -mt-0.5">Safety</span>
             </button>
           </div>
@@ -721,10 +724,15 @@ function HeatmapPage() {
 
             {topTags.length > 0 ? (
               <div className="flex flex-col gap-1.5 text-left bg-gray-50 p-3 rounded-xl">
-                <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Top reported conditions</span>
+                <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
+                  Top reported conditions
+                </span>
                 <div className="flex flex-wrap gap-1.5 mt-1">
                   {topTags.map((tag) => (
-                    <span key={tag} className="bg-white border border-gray-250 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span
+                      key={tag}
+                      className="bg-white border border-gray-250 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
+                    >
                       <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
                       {tag === "Welllit" ? "Well-lit" : tag}
                     </span>
@@ -776,7 +784,9 @@ function HeatmapPage() {
 
             {/* 1-to-10 selector */}
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Select Safety Score (1-10)</label>
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                Select Safety Score (1-10)
+              </label>
               <div className="grid grid-cols-5 gap-2">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => {
                   const isSelected = newScore === score;
@@ -803,30 +813,34 @@ function HeatmapPage() {
 
             {/* Tags checkboxes */}
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Report Area Conditions (Optional)</label>
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                Report Area Conditions (Optional)
+              </label>
               <div className="flex flex-wrap gap-2">
-                {["Poor lighting", "Isolated", "Welllit", "Crowded", "Police presence"].map((tag) => {
-                  const isSelected = newTags.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      onClick={() => {
-                        if (isSelected) {
-                          setNewTags(newTags.filter((t) => t !== tag));
-                        } else {
-                          setNewTags([...newTags, tag]);
-                        }
-                      }}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition active:scale-[0.98] ${
-                        isSelected
-                          ? "bg-emerald-50 border-emerald-500 text-emerald-800"
-                          : "bg-white border-gray-250 text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      {tag === "Welllit" ? "Well-lit" : tag}
-                    </button>
-                  );
-                })}
+                {["Poor lighting", "Isolated", "Welllit", "Crowded", "Police presence"].map(
+                  (tag) => {
+                    const isSelected = newTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => {
+                          if (isSelected) {
+                            setNewTags(newTags.filter((t) => t !== tag));
+                          } else {
+                            setNewTags([...newTags, tag]);
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition active:scale-[0.98] ${
+                          isSelected
+                            ? "bg-emerald-50 border-emerald-500 text-emerald-800"
+                            : "bg-white border-gray-250 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {tag === "Welllit" ? "Well-lit" : tag}
+                      </button>
+                    );
+                  },
+                )}
               </div>
             </div>
 
@@ -835,7 +849,9 @@ function HeatmapPage() {
               onClick={handleRatingSubmit}
               disabled={newScore === null}
               className={`w-full py-4 rounded-xl font-black text-sm text-white transition active:scale-[0.98] mt-2 shadow ${
-                newScore !== null ? "bg-[#0d631b] hover:bg-[#0a5215]" : "bg-gray-250 text-gray-400 cursor-not-allowed shadow-none"
+                newScore !== null
+                  ? "bg-[#0d631b] hover:bg-[#0a5215]"
+                  : "bg-gray-250 text-gray-400 cursor-not-allowed shadow-none"
               }`}
             >
               Submit Safety Rating

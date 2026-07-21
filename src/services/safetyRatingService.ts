@@ -21,7 +21,7 @@ export const submitRating = async (
   lat: number,
   lng: number,
   score: number,
-  tags: string[]
+  tags: string[],
 ) => {
   if (score < 1 || score > 10) {
     throw new Error("Score must be between 1 and 10");
@@ -35,10 +35,10 @@ export const submitRating = async (
   const qCooldown = query(
     collection(db, "safety_ratings"),
     where("uid", "==", uid),
-    where("gridCell", "==", gridCell)
+    where("gridCell", "==", gridCell),
   );
   const cooldownSnap = await getDocs(qCooldown);
-  
+
   for (const doc of cooldownSnap.docs) {
     const data = doc.data();
     const t = data.timestamp as Timestamp;
@@ -81,7 +81,7 @@ export const getAreaScore = async (lat: number, lng: number) => {
   // To avoid fetching everything, we can query ratings in the same general grid area, or just fetch all and filter by distance.
   // For Jaipur demo, we fetch all ratings and calculate distance in-memory (highly accurate for 150m).
   const snap = await getDocs(collection(db, "safety_ratings"));
-  
+
   let totalScore = 0;
   let count = 0;
   const tagCounts: Record<string, number> = {};

@@ -14,10 +14,7 @@ import { db } from "../firebase/firebase";
 // Calculate Grid Cell
 // ======================================
 
-function getGridCell(
-  latitude: number,
-  longitude: number
-) {
+function getGridCell(latitude: number, longitude: number) {
   const latGrid = Math.floor(latitude * 100);
   const lonGrid = Math.floor(longitude * 100);
 
@@ -28,37 +25,20 @@ function getGridCell(
 // Haversine Distance
 // ======================================
 
-function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-) {
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371000;
 
-  const toRadians = (x: number) =>
-    x * Math.PI / 180;
+  const toRadians = (x: number) => (x * Math.PI) / 180;
 
   const dLat = toRadians(lat2 - lat1);
 
   const dLon = toRadians(lon2 - lon1);
 
   const a =
-    Math.sin(dLat / 2) *
-      Math.sin(dLat / 2) +
-    Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
 
-  return (
-    R *
-    2 *
-    Math.atan2(
-      Math.sqrt(a),
-      Math.sqrt(1 - a)
-    )
-  );
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 // ======================================
@@ -70,102 +50,71 @@ export async function submitRating(
   latitude: number,
   longitude: number,
   score: number,
-  tags: string[]
+  tags: string[],
 ) {
-
-  const cell = getGridCell(
-    latitude,
-    longitude
-  );
+  const cell = getGridCell(latitude, longitude);
 
   const q = query(
     collection(db, "safety_ratings"),
     where("uid", "==", uid),
-    where("gridCell", "==", cell)
+    where("gridCell", "==", cell),
   );
 
   const snapshot = await getDocs(q);
 
   if (!snapshot.empty) {
-    throw new Error(
-      "Already rated recently."
-    );
+    throw new Error("Already rated recently.");
   }
 
-  await addDoc(
-    collection(db, "safety_ratings"),
-    {
+  await addDoc(collection(db, "safety_ratings"), {
+    uid,
 
-      uid,
+    geopoint: new GeoPoint(latitude, longitude),
 
-      geopoint: new GeoPoint(
-        latitude,
-        longitude
-      ),
+    score,
 
-      score,
+    tags,
 
-      tags,
+    gridCell: cell,
 
-      gridCell: cell,
-
-      timestamp: serverTimestamp(),
-
-    }
-  );
-
+    timestamp: serverTimestamp(),
+  });
 }
 
 // ======================================
 // Area Score
 // ======================================
 
-export async function getAreaScore(
-  latitude: number,
-  longitude: number
-) {
-
-  const snapshot = await getDocs(
-    collection(db, "safety_ratings")
-  );
+export async function getAreaScore(latitude: number, longitude: number) {
+  const snapshot = await getDocs(collection(db, "safety_ratings"));
 
   let total = 0;
 
   let count = 0;
 
   snapshot.forEach((doc) => {
-
     const data = doc.data();
 
-    const distance =
-      calculateDistance(
+    const distance = calculateDistance(
+      latitude,
 
-        latitude,
+      longitude,
 
-        longitude,
+      data.geopoint.latitude,
 
-        data.geopoint.latitude,
-
-        data.geopoint.longitude
-
-      );
+      data.geopoint.longitude,
+    );
 
     if (distance <= 150) {
-
       total += data.score;
 
       count++;
-
     }
-
   });
 
   if (count < 3) {
-
     return null;
-
   }
 
   return total / count;
-
 }

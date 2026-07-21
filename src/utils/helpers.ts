@@ -1,5 +1,3 @@
-export function currentTime(){
-
-    return new Date();
-
+export function currentTime() {
+  return new Date();
 }

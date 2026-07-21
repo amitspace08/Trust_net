@@ -1,5 +1,4 @@
 export interface TrustRelationship {
-
   id?: string;
 
   userA: string;
@@ -9,5 +8,4 @@ export interface TrustRelationship {
   status: string;
 
   createdAt: any;
-
 }

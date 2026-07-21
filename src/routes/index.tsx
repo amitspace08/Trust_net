@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../lib/auth";
 import Map from "../components/ui/Map";
 
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [{ title: "TrustNet - Home" }],
@@ -343,8 +342,15 @@ function HomePage() {
               to="/safe-spaces"
               className="bg-white border border-emerald-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-emerald-50 transition shadow-sm text-gray-700"
             >
-              <span className="material-symbols-outlined text-emerald-600 text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>store</span>
-              <span className="text-xs font-semibold text-center text-emerald-700">Safe Spaces</span>
+              <span
+                className="material-symbols-outlined text-emerald-600 text-3xl"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                store
+              </span>
+              <span className="text-xs font-semibold text-center text-emerald-700">
+                Safe Spaces
+              </span>
             </Link>
             <Link
               to="/profile"

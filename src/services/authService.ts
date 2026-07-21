@@ -1,20 +1,8 @@
-import {
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-  signOut,
-} from "firebase/auth";
+import { RecaptchaVerifier, signInWithPhoneNumber, signOut } from "firebase/auth";
 
-import type {
-  ConfirmationResult,
-  User,
-} from "firebase/auth";
+import type { ConfirmationResult, User } from "firebase/auth";
 
-import {
-  doc,
-  getDoc,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { auth, db } from "../firebase/firebase";
 
@@ -38,16 +26,9 @@ export const initializeRecaptcha = (containerId: string) => {
 // Send OTP
 // ======================================
 
-export const sendOTP = async (
-  phoneNumber: string,
-  appVerifier: RecaptchaVerifier
-) => {
+export const sendOTP = async (phoneNumber: string, appVerifier: RecaptchaVerifier) => {
   try {
-    confirmationResult = await signInWithPhoneNumber(
-      auth,
-      phoneNumber,
-      appVerifier
-    );
+    confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
 
     return {
       success: true,

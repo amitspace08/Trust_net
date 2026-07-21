@@ -1,19 +1,15 @@
 export const SOS_STATUS = {
+  ACTIVE: "active",
 
-    ACTIVE: "active",
+  CANCELLED: "cancelled",
 
-    CANCELLED: "cancelled",
-
-    RESOLVED: "resolved",
-
+  RESOLVED: "resolved",
 };
 
 export const TRUST_STATUS = {
+  PENDING: "pending",
 
-    PENDING: "pending",
+  ACCEPTED: "accepted",
 
-    ACCEPTED: "accepted",
-
-    REJECTED: "rejected",
-
+  REJECTED: "rejected",
 };

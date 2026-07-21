@@ -1,19 +1,11 @@
 import { db } from "../firebase/firebase";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-} from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 
-export const subscribeToNotifications = (
-  receiver: string,
-  callback: any
-) => {
+export const subscribeToNotifications = (receiver: string, callback: any) => {
   const q = query(
     collection(db, "notifications"),
     where("receiver", "==", receiver),
-    where("read", "==", false)
+    where("read", "==", false),
   );
 
   return onSnapshot(q, (snapshot) => {
