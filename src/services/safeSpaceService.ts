@@ -1,79 +1,217 @@
-import { db } from "../firebase/firebase";
 import {
-  collection,
   addDoc,
+  collection,
+  GeoPoint,
   getDocs,
-  serverTimestamp,
   query,
-  where,
+  serverTimestamp,
 } from "firebase/firestore";
-import { getDistance } from "./guardianService";
 
+import { db } from "../firebase/firebase";
+
+// =======================================
 // Register Safe Space
-export const registerSafeSpace = async (
+// =======================================
+
+export async function registerSafeSpace(
   name: string,
   type: string,
-  lat: number,
-  lng: number,
+  latitude: number,
+  longitude: number,
   address: string
-) => {
-  const ref = await addDoc(collection(db, "safe_spaces"), {
-    name,
-    type,
-    latitude: lat,
-    longitude: lng,
-    address,
-    verified: true, // automatic verification for intern demo
-    registeredAt: serverTimestamp(),
-  });
-  return ref.id;
-};
+) {
 
-// Get Nearest Safe Space
-export const getNearestSafeSpace = async (lat: number, lng: number) => {
-  const q = query(collection(db, "safe_spaces"), where("verified", "==", true));
-  const snap = await getDocs(q);
+  try {
 
-  let nearest: any = null;
-  let minDistance = Infinity;
+    const docRef = await addDoc(
+      collection(db, "safe_spaces"),
+      {
 
-  snap.forEach((doc) => {
+        name,
+
+        type,
+
+        geopoint: new GeoPoint(
+          latitude,
+          longitude
+        ),
+
+        address,
+
+        verified: true,
+
+        registeredAt: serverTimestamp(),
+
+      }
+    );
+
+    return docRef.id;
+
+  } catch (err) {
+
+    console.error(err);
+
+    throw err;
+
+  }
+
+}
+
+// =======================================
+// Calculate Distance
+// =======================================
+
+function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) {
+
+  const R = 6371000;
+
+  const toRadians = (x: number) =>
+    x * Math.PI / 180;
+
+  const dLat = toRadians(lat2 - lat1);
+
+  const dLon = toRadians(lon2 - lon1);
+
+  const a =
+
+    Math.sin(dLat / 2) *
+      Math.sin(dLat / 2)
+
+    +
+
+    Math.cos(toRadians(lat1))
+
+    *
+
+    Math.cos(toRadians(lat2))
+
+    *
+
+    Math.sin(dLon / 2)
+
+    *
+
+    Math.sin(dLon / 2);
+
+  return R * 2 * Math.atan2(
+    Math.sqrt(a),
+    Math.sqrt(1 - a)
+  );
+
+}
+
+// =======================================
+// Nearest Safe Space
+// =======================================
+
+export async function getNearestSafeSpace(
+  latitude: number,
+  longitude: number
+) {
+
+  const snapshot = await getDocs(
+    query(collection(db, "safe_spaces"))
+  );
+
+  let nearest = null;
+
+  let bestDistance = Number.MAX_VALUE;
+
+  snapshot.forEach((doc) => {
+
     const data = doc.data();
-    const dist = getDistance(lat, lng, data.latitude, data.longitude); // in meters
-    if (dist < minDistance) {
-      minDistance = dist;
+
+    const distance = calculateDistance(
+
+      latitude,
+
+      longitude,
+
+      data.geopoint.latitude,
+
+      data.geopoint.longitude
+
+    );
+
+    if (distance < bestDistance) {
+
+      bestDistance = distance;
+
       nearest = {
+
         id: doc.id,
+
+        distance,
+
         ...data,
-        distance: Math.round(dist), // round to nearest meter
+
       };
+
     }
+
   });
 
   return nearest;
-};
 
-// Get Safe Spaces within Radius (in Kilometers)
-export const getSafeSpacesWithinRadius = async (lat: number, lng: number, radiusKm = 1) => {
-  const q = query(collection(db, "safe_spaces"), where("verified", "==", true));
-  const snap = await getDocs(q);
+}
 
-  const list: any[] = [];
-  const radiusMeters = radiusKm * 1000;
+// =======================================
+// Safe Spaces Within Radius
+// =======================================
 
-  snap.forEach((doc) => {
+export async function getSafeSpacesWithinRadius(
+  latitude: number,
+  longitude: number,
+  radius: number
+) {
+
+  const snapshot = await getDocs(
+    query(collection(db, "safe_spaces"))
+  );
+
+ const spaces: any[] = [];
+
+  snapshot.forEach((doc) => {
+
     const data = doc.data();
-    const dist = getDistance(lat, lng, data.latitude, data.longitude);
-    if (dist <= radiusMeters) {
-      list.push({
+
+    const distance = calculateDistance(
+
+      latitude,
+
+      longitude,
+
+      data.geopoint.latitude,
+
+      data.geopoint.longitude
+
+    );
+
+    if (distance <= radius) {
+
+      spaces.push({
+
         id: doc.id,
+
+        distance,
+
         ...data,
-        distance: Math.round(dist),
+
       });
+
     }
+
   });
 
-  // Sort by distance (closest first)
-  list.sort((a, b) => a.distance - b.distance);
-  return list;
-};
+  return spaces.sort(
+
+    (a, b) => a.distance - b.distance
+
+  );
+
+}
