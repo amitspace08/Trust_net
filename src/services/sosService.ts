@@ -14,9 +14,60 @@ import {
   where,
 } from "firebase/firestore";
 import { findGuardianAngels, getLayer1Contacts } from "./trustService";
-import { updateGuardianRating } from "./userService";
 import { db } from "../firebase/firebase";
 import { getLayer2Candidates, rankLayer2Candidates } from "./trustService";
+import {
+  notifyLayer1,
+  notifyLayer2,
+  notifyNextCandidate,
+  notifyResponders,
+} from "./notificationService";
+import { clearLiveSOSLocation, updateLiveSOSLocation } from "./locationService";
+import { notifyLayer1FollowUp } from "./notificationService";
+import { triggerLayer3, clearGuardianTimer } from "./guardianService";
+
+// Map to track pending timers for each SOS session
+const sosTimers = new Map<string, {
+  followUpTimeout?: NodeJS.Timeout;
+  layer2Timeout?: NodeJS.Timeout;
+  locationInterval?: NodeJS.Timeout;
+}>();
+
+export function clearSOSTimers(sessionId: string) {
+  const timers = sosTimers.get(sessionId);
+  if (timers) {
+    if (timers.followUpTimeout) clearTimeout(timers.followUpTimeout);
+    if (timers.layer2Timeout) clearTimeout(timers.layer2Timeout);
+    if (timers.locationInterval) clearInterval(timers.locationInterval);
+    sosTimers.delete(sessionId);
+  }
+  clearGuardianTimer(sessionId);
+}
+
+/** Start broadcasting live SOS location every 5 seconds */
+export function startSOSLocationUpdates(sessionId: string, uid: string) {
+  // Ensure any existing interval is cleared first
+  stopSOSLocationUpdates(sessionId);
+  const interval = setInterval(() => {
+    // Placeholder location; replace with actual geolocation when integrated with client
+    const lat = 28.6139;
+    const lng = 77.209;
+    updateLiveSOSLocation(sessionId, uid, lat, lng);
+  }, 5_000);
+  const timers = sosTimers.get(sessionId) || {};
+  timers.locationInterval = interval;
+  sosTimers.set(sessionId, timers);
+}
+
+/** Stop the live location broadcast for a session */
+export function stopSOSLocationUpdates(sessionId: string) {
+  const timers = sosTimers.get(sessionId);
+  if (timers?.locationInterval) {
+    clearInterval(timers.locationInterval);
+    timers.locationInterval = undefined;
+  }
+  sosTimers.set(sessionId, timers || {});
+}
 /*
 Collection
 
@@ -92,6 +143,19 @@ export async function triggerSOS(uid: string, arg2?: number | string[], arg3?: n
       sessionId: docRef.id,
     });
 
+    await notifyLayer1(docRef.id);
+
+    // Follow‑up notification at 45 seconds
+    const followUpTimeout = setTimeout(() => notifyLayer1FollowUp(docRef.id), 45_000);
+
+    // Trigger Layer 2 escalation after 90 seconds
+    const layer2Timeout = setTimeout(() => triggerLayer2(docRef.id, new GeoPoint(lat ?? 28.6139, lng ?? 77.209)), 90_000);
+
+    sosTimers.set(docRef.id, {
+      followUpTimeout,
+      layer2Timeout,
+    });
+
     return docRef.id;
   } catch (err) {
     console.error(err);
@@ -110,6 +174,22 @@ export async function cancelSOS(sessionId: string) {
       active: false, // backward compatibility
       endTime: serverTimestamp(),
     });
+    try {
+      await deleteDoc(doc(db, "live_locations", sessionId));
+    } catch (e) {
+      console.error("Error clearing live SOS location:", e);
+    }
+    try {
+      await notifyResponders(sessionId);
+    } catch (e) {
+      console.error("Error notifying responders:", e);
+    }
+    try {
+      await deleteLayer2Alerts(sessionId);
+    } catch (e) {
+      console.error("Error deleting layer 2 alerts:", e);
+    }
+    clearSOSTimers(sessionId);
   } catch (err) {
     console.error(err);
     throw err;
@@ -135,6 +215,7 @@ export async function acknowledgeSOS(
         status: "resolved",
       },
     );
+    clearSOSTimers(sessionId);
   } catch (err) {
     console.error(err);
 
@@ -158,6 +239,22 @@ export async function endSOS(sessionId: string) {
         endTime: serverTimestamp(),
       },
     );
+    try {
+      await clearLiveSOSLocation(sessionId);
+    } catch (e) {
+      console.error("Error clearing live SOS location:", e);
+    }
+    try {
+      await notifyResponders(sessionId);
+    } catch (e) {
+      console.error("Error notifying responders:", e);
+    }
+    try {
+      await deleteLayer2Alerts(sessionId);
+    } catch (e) {
+      console.error("Error deleting layer 2 alerts:", e);
+    }
+    clearSOSTimers(sessionId);
   } catch (err) {
     console.error(err);
 
@@ -273,7 +370,6 @@ export async function getSOSSession(sessionId: string) {
 // =======================================
 // Trigger Layer 2
 // =======================================
-
 export async function triggerLayer2(sessionId: string, distressedLocation: GeoPoint) {
   try {
     const session = await getSOSSession(sessionId);
@@ -282,17 +378,43 @@ export async function triggerLayer2(sessionId: string, distressedLocation: GeoPo
       throw new Error("SOS session not found.");
     }
 
+    // Check if Layer 1 acknowledged or if the session is no longer active
+    if (session.status !== "active" || session.layer1Acknowledged) {
+      return [];
+    }
+
     const candidates = await getLayer2Candidates(session.triggeredBy);
 
     const ranked = await rankLayer2Candidates(candidates, distressedLocation);
 
     await updateDoc(doc(db, "sos_sessions", sessionId), {
       layerActive: 2,
+      layer1Timeout: serverTimestamp(),
       layer2Alerted: ranked.map((c) => c.uid),
       layer2Acknowledged: null,
       layer2TriggerTime: serverTimestamp(),
       declinedCandidates: [],
     });
+
+    await Promise.all(
+      ranked.map((candidate, rank) =>
+        setDoc(doc(db, "active_layer2_alerts", `${sessionId}_${candidate.uid}`), {
+          sessionId,
+          receiverUID: candidate.uid,
+          rank,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+          createdAt: serverTimestamp(),
+        }),
+      ),
+    );
+    await notifyLayer2(
+      sessionId,
+      ranked.map((candidate) => candidate.uid),
+      session.triggeredBy,
+    );
+
+    // Start 120-second timeout for Layer 2
+    startLayer2Timeout(sessionId);
 
     return ranked;
   } catch (err) {
@@ -311,6 +433,7 @@ export async function acknowledgeLayer2(sessionId: string, responderUID: string)
       layer2Acknowledged: responderUID,
       status: "resolved",
     });
+    clearSOSTimers(sessionId);
   } catch (err) {
     console.error(err);
     throw err;
@@ -340,6 +463,10 @@ export async function declineLayer2(sessionId: string, responderUID: string) {
     await updateDoc(ref, {
       declinedCandidates: declined,
     });
+
+    const ranked: string[] = data.layer2Alerted || [];
+    const next = ranked.find((uid) => !declined.includes(uid));
+    if (next) await notifyNextCandidate(sessionId, next, data.triggeredBy);
   } catch (err) {
     console.error(err);
     throw err;
@@ -351,22 +478,38 @@ export async function declineLayer2(sessionId: string, responderUID: string) {
 // =======================================
 
 export function startLayer2Timeout(sessionId: string) {
-  setTimeout(async () => {
-    const ref = doc(db, "sos_sessions", sessionId);
+  // Clear any existing Layer 2 timeout first
+  const timers = sosTimers.get(sessionId) || {};
+  if (timers.layer2Timeout) {
+    clearTimeout(timers.layer2Timeout);
+  }
 
-    const snap = await getDoc(ref);
+  const timeout = setTimeout(async () => {
+    try {
+      const ref = doc(db, "sos_sessions", sessionId);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return;
+      const data = snap.data();
 
-    if (!snap.exists()) return;
+      // If already resolved, cancelled, or layerActive is not 2, stop
+      if (data.status !== "active" || data.layerActive !== 2 || data.layer2Acknowledged) return;
 
-    const data = snap.data();
+      console.log("Layer 2 timeout — ready for Layer 3 escalation");
 
-    if (data.layer2Acknowledged) return;
+      await updateDoc(ref, {
+        layerActive: 3,
+        layer2Timeout: serverTimestamp(),
+      });
 
-    await updateDoc(ref, {
-      layerActive: 3,
-      layer2Timeout: true,
-    });
-  }, 120000);
+      // Automatically trigger Layer 3
+      await triggerLayer3(sessionId);
+    } catch (err) {
+      console.error("Error during Layer 2 timeout escalation:", err);
+    }
+  }, 90_000);
+
+  timers.layer2Timeout = timeout;
+  sosTimers.set(sessionId, timers);
 }
 
 // =======================================
@@ -380,72 +523,6 @@ export async function deleteLayer2Alerts(sessionId: string) {
 
   for (const document of snapshot.docs) {
     await deleteDoc(document.ref);
-  }
-}
-
-// =======================================
-// Trigger Layer 3
-// =======================================
-
-export async function triggerLayer3(sessionId: string, distressedLocation: GeoPoint) {
-  try {
-    const guardians = await findGuardianAngels(distressedLocation);
-
-    await updateDoc(doc(db, "sos_sessions", sessionId), {
-      layerActive: 3,
-      layer3Alerted: guardians.map((g) => g.uid),
-      layer3Acknowledged: null,
-      layer3TriggerTime: serverTimestamp(),
-    });
-
-    return guardians;
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
-}
-
-// =======================================
-// Acknowledge Layer 3
-// =======================================
-
-export async function acknowledgeLayer3(sessionId: string, guardianUID: string) {
-  try {
-    await updateDoc(doc(db, "sos_sessions", sessionId), {
-      layer3Acknowledged: guardianUID,
-      status: "resolved",
-    });
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
-} // =======================================
-// Decline Layer 3
-// =======================================
-
-export async function declineLayer3(sessionId: string, guardianUID: string) {
-  try {
-    const ref = doc(db, "sos_sessions", sessionId);
-
-    const snap = await getDoc(ref);
-
-    if (!snap.exists()) return;
-
-    const data = snap.data();
-
-    const declined = data.declinedGuardians || [];
-
-    if (!declined.includes(guardianUID)) {
-      declined.push(guardianUID);
-    }
-
-    await updateDoc(ref, {
-      declinedGuardians: declined,
-    });
-  } catch (err) {
-    console.error(err);
-
-    throw err;
   }
 }
 

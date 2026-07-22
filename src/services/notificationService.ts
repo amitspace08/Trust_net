@@ -10,7 +10,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "../firebase/firebase";
-import { getMutualConnection } from "./trustService";
+import { getMutualConnection, getUser } from "./trustService";
 /*
 notifications
 
@@ -33,6 +33,7 @@ export async function sendNotification(
   title: string,
   message: string,
   type: string,
+  metadata: Record<string, unknown> = {},
 ) {
   try {
     await addDoc(collection(db, "notifications"), {
@@ -46,11 +47,23 @@ export async function sendNotification(
       createdAt: serverTimestamp(),
       timestamp: serverTimestamp(), // backward compatibility
       read: false,
+      ...metadata,
     });
   } catch (err) {
     console.error(err);
     throw err;
   }
+}
+
+/** Browser-compatible foreground notification. Persistent delivery when the
+ * browser is closed requires an FCM web-push service worker and VAPID key. */
+export async function showBrowserNotification(title: string, options: NotificationOptions) {
+  if (typeof window === "undefined" || !("Notification" in window)) return;
+  const permission =
+    Notification.permission === "default"
+      ? await Notification.requestPermission()
+      : Notification.permission;
+  if (permission === "granted") new Notification(title, options);
 }
 
 // Backward compatibility export for guardianService and frontend UI
@@ -79,8 +92,60 @@ export async function notifyLayer1(sessionId: string) {
         "SOS Alert",
         "Emergency assistance required.",
         "SOS",
+        { sessionId, deepLink: `/sos-receiver?sessionId=${sessionId}&role=layer1` },
       );
     }
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+}
+
+// =======================================
+// Notify Layer 1 Follow-up
+// =======================================
+
+export async function notifyLayer1FollowUp(sessionId: string) {
+  try {
+    const snap = await getDoc(doc(db, "sos_sessions", sessionId));
+    if (!snap.exists()) return;
+    const data = snap.data();
+    
+    // Check if the session is still active and no one has acknowledged it
+    if (data.status !== "active" || data.layer1Acknowledged) return;
+
+    const user = await getUser(data.triggeredBy);
+    const displayName = user?.displayName || user?.name || "Someone";
+    const contacts = data.layer1Alerted || [];
+
+    for (const uid of contacts) {
+      await sendNotification(
+        uid,
+        data.triggeredBy,
+        "SOS Follow-up Alert",
+        `${displayName} still needs help — please respond now.`,
+        "SOS_FOLLOWUP",
+        { sessionId, deepLink: `/sos-receiver?sessionId=${sessionId}&role=layer1` },
+      );
+    }
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+}
+
+// =======================================
+// Notify Guardian (Layer 3)
+// =======================================
+
+export async function notifyGuardian(sessionId: string, guardian: { uid: string; distance: number }, distressedUID: string) {
+  try {
+    const distanceMsg = `${Math.round(guardian.distance)}m`;
+    const message = `Emergency nearby — someone needs help ${distanceMsg} from you. Can you respond?`;
+    await sendNotification(guardian.uid, distressedUID, "Guardian Angel Alert", message, "LAYER3_SOS", {
+      sessionId,
+      deepLink: `/sos-receiver?sessionId=${sessionId}&role=layer3`,
+    });
   } catch (err) {
     console.error(err);
     throw err;
@@ -101,9 +166,21 @@ export async function notifyResponders(sessionId: string) {
 
     const owner = sos.data().triggeredBy;
 
-    responders.forEach(async (r) => {
-      await sendNotification(r.id, owner, "SOS Ended", "Emergency has ended.", "END_SOS");
-    });
+    await Promise.all(
+      responders.docs.map((r) =>
+        sendNotification(
+          r.id,
+          owner,
+          "SOS ended",
+          "The person marked themselves safe. Thank you for responding.",
+          "END_SOS",
+          {
+            sessionId,
+            deepLink: "/",
+          },
+        ),
+      ),
+    );
   } catch (err) {
     console.error(err);
     throw err;
@@ -142,7 +219,10 @@ export async function notifyLayer2(
         ? `${mutual.displayName}'s trusted friend needs emergency assistance nearby.`
         : "A nearby user needs emergency assistance.";
 
-      await sendNotification(uid, distressedUID, "Layer 2 SOS Alert", message, "LAYER2_SOS");
+      await sendNotification(uid, distressedUID, "Layer 2 SOS Alert", message, "LAYER2_SOS", {
+        sessionId,
+        deepLink: `/sos-receiver?sessionId=${sessionId}&role=layer2`,
+      });
     }
   } catch (err) {
     console.error(err);
@@ -172,6 +252,7 @@ export async function notifyNextCandidate(
       "Layer 2 SOS Retry",
       message,
       "LAYER2_RETRY",
+      { sessionId, deepLink: `/sos-receiver?sessionId=${sessionId}&role=layer2` },
     );
   } catch (err) {
     console.error(err);

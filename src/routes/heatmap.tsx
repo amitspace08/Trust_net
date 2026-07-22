@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "../lib/auth";
 import { loadContacts, Contact } from "../lib/contacts-db";
@@ -12,6 +12,7 @@ export const Route = createFileRoute("/heatmap")({
 
 function HeatmapPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isNightMode, setIsNightMode] = useState(false);
@@ -507,7 +508,7 @@ function HeatmapPage() {
                   Call Contact
                 </a>
                 <button
-                  onClick={() => router.navigate({ to: "/circle" })}
+                  onClick={() => navigate({ to: "/circle" })}
                   className="flex-1 py-2.5 border border-gray-300 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-50 transition flex justify-center items-center gap-1.5"
                 >
                   <span className="material-symbols-outlined text-sm">group</span>

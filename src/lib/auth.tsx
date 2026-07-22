@@ -1,4 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { auth } from "../firebase/firebase";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInAnonymously,
+  signOut,
+  onAuthStateChanged,
+} from "firebase/auth";
 
 export type User = { id: string; name: string; email: string };
 type AuthState = {
@@ -30,13 +38,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setUser(JSON.parse(raw));
-    } catch (err) {
-      console.warn("Failed to load user from localStorage", err);
-    }
-    setReady(true);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (raw) {
+          const localUser = JSON.parse(raw);
+          if (firebaseUser && firebaseUser.uid === localUser.id) {
+            setUser(localUser);
+          } else if (firebaseUser) {
+            setUser({
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || localUser.name || "User",
+              email: firebaseUser.email || localUser.email || "",
+            });
+          } else {
+            // If local storage has user but firebase auth is signed out, sign in anonymously to keep context
+            signInAnonymously(auth).catch(console.error);
+            setUser(localUser);
+          }
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        console.warn("Failed to load user from localStorage", err);
+      }
+      setReady(true);
+    });
+    return () => unsubscribe();
   }, []);
 
   const persist = (u: User | null) => {
@@ -49,22 +77,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     ready,
     async login(email, password) {
-      const users = readUsers();
-      const rec = users[email.toLowerCase()];
-      if (!rec) throw new Error("No account found for this email");
-      if (rec.password !== password) throw new Error("Incorrect password");
-      persist({ id: rec.id, name: rec.name, email: email.toLowerCase() });
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const firebaseUser = userCredential.user;
+        persist({ id: firebaseUser.uid, name: firebaseUser.displayName || email.split("@")[0], email: email.toLowerCase() });
+      } catch (firebaseErr: any) {
+        console.warn("Firebase email login failed, falling back to mock database:", firebaseErr);
+        const users = readUsers();
+        const rec = users[email.toLowerCase()];
+        if (!rec) throw new Error("No account found for this email");
+        if (rec.password !== password) throw new Error("Incorrect password");
+        
+        await signInAnonymously(auth);
+        const currentUser = auth.currentUser;
+        const finalUid = currentUser ? currentUser.uid : rec.id;
+        
+        rec.id = finalUid;
+        users[email.toLowerCase()] = rec;
+        writeUsers(users);
+
+        persist({ id: finalUid, name: rec.name, email: email.toLowerCase() });
+      }
     },
     async signup(name, email, password) {
-      const users = readUsers();
-      const key = email.toLowerCase();
-      if (users[key]) throw new Error("An account already exists for this email");
-      const id = crypto.randomUUID();
-      users[key] = { name, password, id };
-      writeUsers(users);
-      persist({ id, name, email: key });
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const firebaseUser = userCredential.user;
+        persist({ id: firebaseUser.uid, name, email: email.toLowerCase() });
+      } catch (firebaseErr: any) {
+        console.warn("Firebase email signup failed, falling back to mock database:", firebaseErr);
+        const users = readUsers();
+        const key = email.toLowerCase();
+        if (users[key]) throw new Error("An account already exists for this email");
+        
+        await signInAnonymously(auth);
+        const currentUser = auth.currentUser;
+        const finalUid = currentUser ? currentUser.uid : crypto.randomUUID();
+        
+        users[key] = { name, password, id: finalUid };
+        writeUsers(users);
+        persist({ id: finalUid, name, email: key });
+      }
     },
     logout() {
+      signOut(auth).catch(console.error);
       persist(null);
     },
   };

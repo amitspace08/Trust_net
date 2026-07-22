@@ -2,13 +2,21 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "../lib/auth";
 import {
-  loadContacts,
-  saveContacts,
-  loadRequests,
-  saveRequests,
   Contact,
   ContactRequest,
 } from "../lib/contacts-db";
+import { db } from "../firebase/firebase";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
+import { acceptRequest, rejectRequest } from "../services/trustService";
 
 export const Route = createFileRoute("/circle")({
   head: () => ({
@@ -17,101 +25,233 @@ export const Route = createFileRoute("/circle")({
   component: TrustCirclePage,
 });
 
+// Helper for Haversine distance if needed (returns as string)
+function formatDistance(lat1: number, lon1: number, lat2: number, lon2: number): string {
+  const R = 6371; // km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c;
+  if (d < 1) {
+    return `${Math.round(d * 1000)}m`;
+  }
+  return `${d.toFixed(1)}km`;
+}
+
+interface CustomContact extends Contact {
+  relationshipId?: string;
+}
+
 function TrustCirclePage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contacts, setContacts] = useState<CustomContact[]>([]);
   const [requests, setRequests] = useState<ContactRequest[]>([]);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-  // Load state on mount
+  // 1. Listen for accepted contacts in Firestore
   useEffect(() => {
-    setContacts(loadContacts());
-    setRequests(loadRequests());
-  }, []);
+    if (!user) return;
 
-  // Update localStorage when state changes
-  const updateContacts = (newContacts: Contact[]) => {
-    setContacts(newContacts);
-    saveContacts(newContacts);
-  };
+    const qAccepted = query(
+      collection(db, "trust_relationships"),
+      where("status", "==", "accepted")
+    );
 
-  const updateRequests = (newRequests: ContactRequest[]) => {
-    setRequests(newRequests);
-    saveRequests(newRequests);
-  };
+    const unsubscribe = onSnapshot(qAccepted, async (snapshot) => {
+      try {
+        const list: CustomContact[] = [];
+        // Extract browser location for distance calculations
+        let browserLat = 28.6139;
+        let browserLng = 77.209;
+        try {
+          const rawLoc = localStorage.getItem("trustnet_browser_location");
+          if (rawLoc) {
+            const parsed = JSON.parse(rawLoc);
+            browserLat = parsed.lat;
+            browserLng = parsed.lng;
+          }
+        } catch {}
 
-  // Toggle Active/Inactive status
-  const toggleContactStatus = (id: string) => {
-    const next = contacts.map((c) => {
-      if (c.id === id) {
-        return {
-          ...c,
-          status: c.status === "Active" ? ("Inactive" as const) : ("Active" as const),
-        };
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data();
+          if (data.userA === user.id || data.userB === user.id) {
+            const contactUid = data.userA === user.id ? data.userB : data.userA;
+            
+            // Get user profile
+            const userRef = doc(db, "users", contactUid);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+              const uData = userSnap.data();
+              // Get user location
+              const locRef = doc(db, "user_locations", contactUid);
+              const locSnap = await getDoc(locRef);
+              const locData = locSnap.exists() ? locSnap.data() : null;
+
+              const cLat = locData?.geopoint?.latitude ?? locData?.latitude ?? 28.6139;
+              const cLng = locData?.geopoint?.longitude ?? locData?.longitude ?? 77.209;
+              const distStr = locData?.sharingEnabled !== false
+                ? formatDistance(browserLat, browserLng, cLat, cLng)
+                : "Unknown";
+
+              list.push({
+                id: contactUid,
+                relationshipId: docSnap.id,
+                name: uData.name || uData.displayName || "Contact",
+                phone: uData.phone || uData.phone_no || "",
+                relation: data.relation || "Friend",
+                avatar: uData.avatar || uData.profile_photo || "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+                online: uData.online ?? true,
+                status: data.inactive ? "Inactive" : "Active",
+                at: data.createdAt?.seconds ? data.createdAt.seconds * 1000 : Date.now(),
+                shareLocation: locData ? locData.sharingEnabled !== false : true,
+                lastUpdated: locData?.timestamp?.toDate ? locData.timestamp.toDate().toLocaleTimeString() : "Just now",
+                distance: distStr,
+                latitude: cLat,
+                longitude: cLng,
+              });
+            }
+          }
+        }
+        setContacts(list);
+      } catch (err) {
+        console.error("Error subscribing to accepted contacts:", err);
       }
-      return c;
     });
-    updateContacts(next);
-    setActiveMenuId(null);
-  };
 
-  // Remove contact
-  const removeContact = (id: string) => {
-    const next = contacts.filter((c) => c.id !== id);
-    updateContacts(next);
-    setActiveMenuId(null);
-  };
+    return () => unsubscribe();
+  }, [user]);
 
-  // Accept incoming request
-  const handleAcceptRequest = (reqId: string) => {
-    const req = requests.find((r) => r.id === reqId);
-    if (!req) return;
+  // 2. Listen for pending trust requests in Firestore
+  useEffect(() => {
+    if (!user) return;
 
-    // Change request status to Accepted
-    const nextRequests = requests.map((r) =>
-      r.id === reqId ? { ...r, status: "Accepted" as const } : r,
+    const qPending = query(
+      collection(db, "trust_relationships"),
+      where("status", "==", "pending")
     );
-    updateRequests(nextRequests);
 
-    const directoryUser = MOCK_USER_DIRECTORY.find((u) => u.phone === req.phone);
-    const newContact: Contact = {
-      id: crypto.randomUUID(),
-      name: req.name,
-      phone: req.phone,
-      relation: req.relation,
-      avatar: req.avatar,
-      online: req.online,
-      status: "Active",
-      at: Date.now(),
-      shareLocation: directoryUser ? directoryUser.shareLocation : true,
-      lastUpdated: directoryUser ? directoryUser.lastUpdated : "Just now",
-      distance: directoryUser ? directoryUser.distance : "Unknown",
-      latitude: directoryUser ? directoryUser.latitude : 12.9716,
-      longitude: directoryUser ? directoryUser.longitude : 77.5946,
-    };
-    updateContacts([newContact, ...contacts]);
+    const unsubscribe = onSnapshot(qPending, async (snapshot) => {
+      try {
+        const list: ContactRequest[] = [];
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data();
+          
+          if (data.userB === user.id) {
+            // Incoming request
+            const senderRef = doc(db, "users", data.userA);
+            const senderSnap = await getDoc(senderRef);
+            if (senderSnap.exists()) {
+              const sData = senderSnap.data();
+              list.push({
+                id: docSnap.id,
+                name: sData.name || sData.displayName || "User",
+                phone: sData.phone || sData.phone_no || "",
+                relation: data.relation || "Friend",
+                avatar: sData.avatar || sData.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
+                online: sData.online ?? true,
+                type: "incoming",
+                status: "Pending",
+                at: data.createdAt?.seconds ? data.createdAt.seconds * 1000 : Date.now(),
+              });
+            }
+          } else if (data.userA === user.id) {
+            // Outgoing request
+            const receiverRef = doc(db, "users", data.userB);
+            const receiverSnap = await getDoc(receiverRef);
+            if (receiverSnap.exists()) {
+              const rData = receiverSnap.data();
+              list.push({
+                id: docSnap.id,
+                name: rData.name || rData.displayName || "User",
+                phone: rData.phone || rData.phone_no || "",
+                relation: data.relation || "Friend",
+                avatar: rData.avatar || rData.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
+                online: rData.online ?? true,
+                type: "outgoing",
+                status: "Pending",
+                at: data.createdAt?.seconds ? data.createdAt.seconds * 1000 : Date.now(),
+              });
+            }
+          }
+        }
+        setRequests(list);
+      } catch (err) {
+        console.error("Error subscribing to pending requests:", err);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Toggle Active/Inactive status in Firestore
+  const toggleContactStatus = async (id: string) => {
+    const contact = contacts.find((c) => c.id === id);
+    if (!contact || !contact.relationshipId) return;
+    try {
+      const nextInactive = contact.status === "Active";
+      await updateDoc(doc(db, "trust_relationships", contact.relationshipId), {
+        inactive: nextInactive,
+      });
+      setActiveMenuId(null);
+    } catch (err) {
+      console.error("Failed to toggle contact status:", err);
+    }
   };
 
-  // Reject incoming request
-  const handleRejectRequest = (reqId: string) => {
-    const nextRequests = requests.map((r) =>
-      r.id === reqId ? { ...r, status: "Rejected" as const } : r,
-    );
-    updateRequests(nextRequests);
+  // Remove contact relationship from Firestore
+  const removeContact = async (id: string) => {
+    const contact = contacts.find((c) => c.id === id);
+    if (!contact || !contact.relationshipId) return;
+    try {
+      await deleteDoc(doc(db, "trust_relationships", contact.relationshipId));
+      setActiveMenuId(null);
+    } catch (err) {
+      console.error("Failed to remove contact:", err);
+    }
   };
 
-  // Cancel outgoing request
-  const handleCancelRequest = (reqId: string) => {
-    const nextRequests = requests.filter((r) => r.id !== reqId);
-    updateRequests(nextRequests);
+  // Accept incoming request in Firestore
+  const handleAcceptRequest = async (reqId: string) => {
+    try {
+      await acceptRequest(reqId);
+    } catch (err) {
+      console.error("Failed to accept request:", err);
+    }
   };
 
-  // Clear a processed (Accepted/Rejected) request from list view
-  const handleDismissRequest = (reqId: string) => {
-    const nextRequests = requests.filter((r) => r.id !== reqId);
-    updateRequests(nextRequests);
+  // Reject incoming request in Firestore
+  const handleRejectRequest = async (reqId: string) => {
+    try {
+      await rejectRequest(reqId);
+    } catch (err) {
+      console.error("Failed to reject request:", err);
+    }
+  };
+
+  // Cancel outgoing request from Firestore
+  const handleCancelRequest = async (reqId: string) => {
+    try {
+      await deleteDoc(doc(db, "trust_relationships", reqId));
+    } catch (err) {
+      console.error("Failed to cancel request:", err);
+    }
+  };
+
+  // Clear processed request
+  const handleDismissRequest = async (reqId: string) => {
+    try {
+      await deleteDoc(doc(db, "trust_relationships", reqId));
+    } catch (err) {
+      console.error("Failed to dismiss request:", err);
+    }
   };
 
   const pendingRequests = requests.filter((r) => r.status === "Pending");

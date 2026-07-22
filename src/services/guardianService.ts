@@ -10,7 +10,7 @@ import {
   where,
   serverTimestamp,
 } from "firebase/firestore";
-import { sendSOSNotification } from "./notificationService";
+import { sendSOSNotification, sendNotification, notifyGuardian } from "./notificationService";
 
 // Haversine distance calculator
 export function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -25,6 +25,72 @@ export function getDistance(lat1: number, lon1: number, lat2: number, lon2: numb
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
+}
+
+// Map to track active timeouts for Guardian Angels
+const gaTimers = new Map<string, NodeJS.Timeout>();
+
+export function startGuardianTimeout(sessionId: string, guardianUid: string, index: number) {
+  // Clear any existing timer for this session
+  if (gaTimers.has(sessionId)) {
+    clearTimeout(gaTimers.get(sessionId));
+  }
+
+  const timeout = setTimeout(async () => {
+    try {
+      const sessionRef = doc(db, "sos_sessions", sessionId);
+      const sessionSnap = await getDoc(sessionRef);
+      if (!sessionSnap.exists()) return;
+
+      const data = sessionSnap.data();
+      // If session is not active or has been resolved/acknowledged, do nothing
+      if (data.status !== "active" || data.layer3Acknowledged) return;
+
+      const declined = data.layer3Declined || [];
+      // If this guardian already declined, do nothing
+      if (declined.includes(guardianUid)) return;
+
+      // Automatically decline due to timeout
+      const updatedDeclined = [...declined, guardianUid];
+      const alerted = data.layer3Alerted || [];
+      const remaining = alerted.filter((uid: string) => !updatedDeclined.includes(uid));
+
+      await updateDoc(sessionRef, {
+        layer3Declined: updatedDeclined,
+        layer3Exhausted: remaining.length === 0,
+      });
+
+      // Notify the next GA if any are left
+      if (remaining.length > 0) {
+        const nextUid = remaining[0];
+        // Calculate distance
+        const lat = data.latitude;
+        const lng = data.longitude;
+        const locSnap = await getDoc(doc(db, "user_locations", nextUid));
+        let distanceMeters = 0;
+        if (locSnap.exists()) {
+          const locData = locSnap.data();
+          distanceMeters = Math.round(getDistance(lat, lng, locData.latitude, locData.longitude));
+        }
+
+        await notifyGuardian(sessionId, { uid: nextUid, distance: distanceMeters }, data.triggeredBy);
+
+        // Start timeout for the next GA
+        startGuardianTimeout(sessionId, nextUid, index + 1);
+      }
+    } catch (err) {
+      console.error("Guardian Angel timeout error:", err);
+    }
+  }, 60_000);
+
+  gaTimers.set(sessionId, timeout);
+}
+
+export function clearGuardianTimer(sessionId: string) {
+  if (gaTimers.has(sessionId)) {
+    clearTimeout(gaTimers.get(sessionId));
+    gaTimers.delete(sessionId);
+  }
 }
 
 // 1. Register as Guardian Angel
@@ -119,7 +185,6 @@ export const findGuardianAngels = async (lat: number, lng: number, maxRadius = 2
 
   return filtered;
 };
-
 // 4. Trigger Layer 3 Escalation
 export const triggerLayer3 = async (sessionId: string) => {
   const sessionRef = doc(db, "sos_sessions", sessionId);
@@ -141,9 +206,12 @@ export const triggerLayer3 = async (sessionId: string) => {
     layer3Exhausted: gaUids.length === 0, // if no GAs nearby, exhaust immediately
   });
 
-  // Send notifications to GAs
-  for (const ga of gas) {
-    await sendSOSNotification(sessionId, ga.uid);
+  // Send notification to the first GA (since it's sequential notification)
+  if (gas.length > 0) {
+    const firstGa = gas[0];
+    const distanceMeters = Math.round(firstGa.distance);
+    await notifyGuardian(sessionId, { uid: firstGa.uid, distance: distanceMeters }, sessionData.triggeredBy);
+    startGuardianTimeout(sessionId, firstGa.uid, 0);
   }
 
   return gas;
@@ -162,6 +230,8 @@ export const acknowledgeLayer3 = async (sessionId: string, guardianUID: string) 
     active: true, // keep session active, but set responder
     layer3Acknowledged: true,
   });
+
+  clearGuardianTimer(sessionId);
 };
 
 // 6. Decline Layer 3 Alert
@@ -182,9 +252,22 @@ export const declineLayer3 = async (sessionId: string, guardianUID: string) => {
     layer3Exhausted: remaining.length === 0,
   });
 
+  clearGuardianTimer(sessionId);
+
   // If there are remaining GAs, notify the next one immediately (Sequential Alerting)
   if (remaining.length > 0) {
-    await sendSOSNotification(sessionId, remaining[0]);
+    const nextUid = remaining[0];
+    const lat = data.latitude;
+    const lng = data.longitude;
+    const locSnap = await getDoc(doc(db, "user_locations", nextUid));
+    let distanceMeters = 0;
+    if (locSnap.exists()) {
+      const locData = locSnap.data();
+      distanceMeters = Math.round(getDistance(lat, lng, locData.latitude, locData.longitude));
+    }
+
+    await notifyGuardian(sessionId, { uid: nextUid, distance: distanceMeters }, data.triggeredBy);
+    startGuardianTimeout(sessionId, nextUid, updatedDeclined.length);
   }
 };
 

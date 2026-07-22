@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 export default function SOSButton() {
   const navigate = useNavigate();
-  const timerRef = useRef<number>();
+  const timerRef = useRef<any>(null);
 
   const startHold = () => {
     timerRef.current = window.setTimeout(() => {

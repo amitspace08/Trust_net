@@ -1,15 +1,24 @@
 import { createFileRoute, Link, useRouter, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { acknowledgeLayer3, declineLayer3 } from "../services/guardianService";
+import {
+  acknowledgeLayer2,
+  acknowledgeSOS,
+  declineLayer2,
+  listenSOS,
+} from "../services/sosService";
+import { subscribeToLiveSOSLocation, updateMyLocation } from "../services/locationService";
 
 type ReceiverSearch = {
   role?: string;
+  sessionId?: string;
 };
 
 export const Route = createFileRoute("/sos-receiver")({
   validateSearch: (search: Record<string, unknown>): ReceiverSearch => {
     return {
       role: search.role as string | undefined,
+      sessionId: search.sessionId as string | undefined,
     };
   },
   head: () => ({
@@ -21,6 +30,7 @@ export const Route = createFileRoute("/sos-receiver")({
 function SosReceiverPage() {
   const router = useRouter();
   const search = useSearch({ from: "/sos-receiver" });
+  const sessionId = search.sessionId;
 
   const [receiverState, setReceiverState] = useState<
     "alert" | "confirm" | "responding" | "thankyou" | "declined"
@@ -33,13 +43,14 @@ function SosReceiverPage() {
   const [sosLayer, setSosLayer] = useState<number>(1);
   const [mutualContactName, setMutualContactName] = useState<string>("Riya");
 
-  // Responder pin position coordinates (percentage-based on map container)
-  const [pinPos, setPinPos] = useState({ top: 75, left: 65 });
+  // Responder coordinates tracked via browser geolocation
+  const [responderLoc, setResponderLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const [liveLocation, setLiveLocation] = useState<any>(null);
 
   // 60-second response countdown window for GAs (Task 1 S4.2)
   const [responseWindow, setResponseWindow] = useState(60);
 
-  // Load responder profile or default (Rakesh Kumar)
+  // Load responder profile or default
   const [responderUID, setResponderUID] = useState("ga_jaipur_1");
 
   useEffect(() => {
@@ -55,6 +66,57 @@ function SosReceiverPage() {
       // Fallback
     }
   }, []);
+
+  // Watch responder's current location continuously
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setResponderLoc({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      (err) => {
+        console.error("Error watching responder location:", err);
+        setResponderLoc((prev) => prev || { lat: 28.6145, lng: 77.2085 });
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
+  // Publish responder's live location to Firestore while responding
+  useEffect(() => {
+    if (receiverState !== "responding" || sosStatus === "ended" || !responderUID || !responderLoc) return;
+    
+    const publishLocation = async () => {
+      try {
+        await updateMyLocation(responderUID, responderLoc.lat, responderLoc.lng);
+      } catch (err) {
+        console.error("Failed to publish responder location:", err);
+      }
+    };
+    
+    publishLocation();
+    const interval = setInterval(publishLocation, 10000); // every 10 seconds
+    return () => clearInterval(interval);
+  }, [receiverState, sosStatus, responderUID, responderLoc]);
+
+  // Real-time session and distress-location feeds when this receiver was opened
+  // from a session-scoped notification.
+  useEffect(() => {
+    if (!sessionId) return;
+    return listenSOS(sessionId, (session) => {
+      if (session.status !== "active") setSosStatus("ended");
+      if (session.layerActive) setSosLayer(session.layerActive);
+    });
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    return subscribeToLiveSOSLocation(sessionId, setLiveLocation);
+  }, [sessionId]);
 
   // Sync SOS status with localStorage to check for dynamic updates
   useEffect(() => {
@@ -109,48 +171,96 @@ function SosReceiverPage() {
     return () => clearTimeout(timer);
   }, [responseWindow, receiverState, isLayer3]);
 
-  // Initialize L2 distance and eta correctly
-  useEffect(() => {
-    if (isLayer2) {
-      setDistance(0.3);
-      setEta(2);
-    } else {
-      setDistance(0.85);
-      setEta(6);
+  // Stable fuzzy offset calculation
+  const getFuzzyOffset = (lat: number, lng: number, sId: string) => {
+    let hash = 0;
+    for (let i = 0; i < sId.length; i++) {
+      hash = sId.charCodeAt(i) + ((hash << 5) - hash);
     }
-  }, [isLayer2]);
+    const angle = (Math.abs(hash) % 360) * (Math.PI / 180);
+    const dist = 100 + (Math.abs(hash >> 3) % 101); // 100m to 200m
+    const latOffset = (dist * Math.cos(angle)) / 111000;
+    const lngOffset = (dist * Math.sin(angle)) / 98000;
+    return { lat: lat + latOffset, lng: lng + lngOffset };
+  };
 
-  // Animate responder pin towards distressed user when responding is active
+  // Helper for GPS coordinates mapping to UI percentage bounds
+  const getMapPosition = (lat: number, lng: number) => {
+    if (!liveLocation) {
+      return { top: 45, left: 50 };
+    }
+    const dLat = liveLocation.latitude ?? 28.6139;
+    const dLng = liveLocation.longitude ?? 77.209;
+    const rLat = responderLoc?.lat ?? 28.6145;
+    const rLng = responderLoc?.lng ?? 77.2085;
+
+    const latMin = Math.min(dLat, rLat);
+    const latMax = Math.max(dLat, rLat);
+    const lngMin = Math.min(dLng, rLng);
+    const lngMax = Math.max(dLng, rLng);
+
+    const latDelta = Math.max(0.002, latMax - latMin);
+    const lngDelta = Math.max(0.002, lngMax - lngMin);
+
+    const minLat = latMin - latDelta * 0.2;
+    const maxLat = latMax + latDelta * 0.2;
+    const minLng = lngMin - lngDelta * 0.2;
+    const maxLng = lngMax + lngDelta * 0.2;
+
+    const xPercent = ((lng - minLng) / (maxLng - minLng)) * 100;
+    const yPercent = ((maxLat - lat) / (maxLat - minLat)) * 100;
+
+    return {
+      top: Math.min(92, Math.max(8, yPercent)),
+      left: Math.min(92, Math.max(8, xPercent)),
+    };
+  };
+
+  const getHaversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // Dynamically update distance & ETA based on real GPS coordinates
   useEffect(() => {
-    if (receiverState !== "responding" || sosStatus === "ended") return;
+    if (liveLocation && responderLoc) {
+      const dLat = liveLocation.latitude ?? 28.6139;
+      const dLng = liveLocation.longitude ?? 77.209;
+      const rLat = responderLoc.lat;
+      const rLng = responderLoc.lng;
+      const dist = getHaversineDistance(rLat, rLng, dLat, dLng);
+      setDistance(Number(dist.toFixed(2)));
+      const nextEta = Math.max(1, Math.ceil(dist * 12)); // ~12 mins per km
+      setEta(nextEta);
+    }
+  }, [liveLocation, responderLoc]);
 
-    const targetPos = isLayer2 ? { top: 46, left: 49 } : { top: 49, left: 52 };
-    const interval = setInterval(() => {
-      setPinPos((current) => {
-        const dTop = targetPos.top - current.top;
-        const dLeft = targetPos.left - current.left;
+  // Precalculate exact map percentage positions
+  const distressLat = liveLocation?.latitude ?? 28.6139;
+  const distressLng = liveLocation?.longitude ?? 77.209;
+  const responderLat = responderLoc?.lat ?? 28.6145;
+  const responderLng = responderLoc?.lng ?? 77.2085;
 
-        const stepTop = dTop * 0.12;
-        const stepLeft = dLeft * 0.12;
-
-        setDistance((prevDistance) => {
-          const distRemaining = Math.max(0.05, prevDistance - 0.05);
-          const nextEta = Math.max(1, Math.ceil(distRemaining * 7));
-          setEta(nextEta);
-          return Number(distRemaining.toFixed(2));
-        });
-
-        if (Math.abs(dTop) < 0.5 && Math.abs(dLeft) < 0.5) {
-          clearInterval(interval);
-          return targetPos;
-        }
-
-        return { top: current.top + stepTop, left: current.left + stepLeft };
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [receiverState, sosStatus, isLayer2]);
+  const distressPosExact = getMapPosition(distressLat, distressLng);
+  
+  // Fuzzy location centered at stable offset
+  const fuzzyCoords = getFuzzyOffset(distressLat, distressLng, sessionId || "default");
+  const distressPosFuzzy = getMapPosition(fuzzyCoords.lat, fuzzyCoords.lng);
+  
+  // Decide which position to show for distress user
+  const showFuzzy = isLayer2 || (isLayer3 && receiverState !== "responding");
+  const distressPos = showFuzzy ? distressPosFuzzy : distressPosExact;
+  
+  const responderPos = getMapPosition(responderLat, responderLng);
 
   // Show Pre-Response confirmation before responding
   const handleStartHelp = () => {
@@ -165,7 +275,10 @@ function SosReceiverPage() {
   const handleConfirmRespond = async () => {
     setReceiverState("responding");
     try {
-      await acknowledgeLayer3("amit123", responderUID);
+      if (!sessionId) throw new Error("This alert has no SOS session");
+      if (isLayer2) await acknowledgeLayer2(sessionId, responderUID);
+      else if (isLayer3) await acknowledgeLayer3(sessionId, responderUID);
+      else await acknowledgeSOS(sessionId, responderUID);
       console.log("Firebase: Acknowledged Layer 3 Alert");
 
       // Update local storage so checkResponder updates local states if needed
@@ -187,7 +300,9 @@ function SosReceiverPage() {
   const handleDeclineRequest = async () => {
     setReceiverState("declined");
     try {
-      await declineLayer3("amit123", responderUID);
+      if (!sessionId) throw new Error("This alert has no SOS session");
+      if (isLayer2) await declineLayer2(sessionId, responderUID);
+      else if (isLayer3) await declineLayer3(sessionId, responderUID);
       console.log("Firebase: Declined Layer 3 Alert");
 
       // Record decline to local stashed state
@@ -318,7 +433,7 @@ function SosReceiverPage() {
             <h2 className="text-sm font-bold text-gray-900">Priya Sharma</h2>
             <p className="text-xs text-gray-500">Trust Score: 98</p>
             <p
-              className={`text-xs font-semibold mt-0.5 ${isLayer2 ? "text-indigo-650" : "text-red-600"}`}
+              className={`text-xs font-semibold mt-0.5 ${isLayer2 ? "text-indigo-600" : "text-red-600"}`}
             >
               Safety Status: {isLayer2 ? "L2 Escalated" : "Distressed"}
             </p>
@@ -414,18 +529,22 @@ function SosReceiverPage() {
         </div>
 
         {/* Distressed User Pin (Priya Sharma) - Fuzzy Map for Layer 2 & Layer 3 privacy (Task 1 S3.2) */}
-        {isLayer2 || (isLayer3 && receiverState !== "responding") ? (
+        {showFuzzy ? (
           <>
             {/* Transparent Circular Area showing 200m Privacy Radius */}
             <div
-              style={{ top: "45%", left: "50%" }}
+              style={{ top: `${distressPos.top}%`, left: `${distressPos.left}%` }}
               className={`absolute z-10 w-36 h-36 -ml-18 -mt-18 rounded-full border-2 bg-opacity-10 pointer-events-none animate-pulse ${
                 isLayer3 ? "border-amber-500 bg-amber-500/10" : "border-indigo-500 bg-indigo-500/10"
               }`}
-            />
+            >
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap bg-black/60 text-[9px] text-white px-2 py-0.5 rounded font-bold font-sans uppercase">
+                Approximate location — privacy mode
+              </div>
+            </div>
             {/* Fuzzy offset avatar */}
             <div
-              style={{ top: "47%", left: "48%" }}
+              style={{ top: `${distressPos.top + 2}%`, left: `${distressPos.left - 2}%` }}
               className={`absolute z-20 w-11 h-11 -ml-5.5 -mt-5.5 rounded-full border-4 bg-white shadow-lg flex items-center justify-center pointer-events-none ${
                 isLayer3 ? "border-amber-400" : "border-indigo-400"
               }`}
@@ -442,7 +561,7 @@ function SosReceiverPage() {
         ) : (
           /* Layer 1 Exact Tracking Pin & Post-Response Layer 3 Pin */
           <div
-            style={{ top: "45%", left: "50%" }}
+            style={{ top: `${distressPos.top}%`, left: `${distressPos.left}%` }}
             className={`absolute z-20 w-12 h-12 -ml-6 -mt-6 rounded-full border-4 bg-white shadow-2xl flex items-center justify-center pointer-events-none ${
               isLayer3 ? "border-amber-500" : "border-red-500"
             }`}
@@ -456,7 +575,7 @@ function SosReceiverPage() {
             </div>
             <span
               className={`absolute inset-0 rounded-full border-4 animate-ping opacity-35 ${
-                isLayer3 ? "border-amber-600" : "border-red-650"
+                isLayer3 ? "border-amber-600" : "border-red-600"
               }`}
             />
           </div>
@@ -466,19 +585,20 @@ function SosReceiverPage() {
         {receiverState === "responding" && (
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
             <line
-              x1={`${pinPos.left}%`}
-              y1={`${pinPos.top}%`}
-              x2="50%"
-              y2="45%"
+              x1={`${responderPos.left}%`}
+              y1={`${responderPos.top}%`}
+              x2={`${distressPos.left}%`}
+              y2={`${distressPos.top}%`}
               stroke={isLayer3 ? "#f59e0b" : "#3b82f6"}
               strokeWidth="3.5"
+              strokeDasharray="6,6"
             />
           </svg>
         )}
 
         {/* Responder Pin (Moving GPS pin) */}
         <div
-          style={{ top: `${pinPos.top}%`, left: `${pinPos.left}%` }}
+          style={{ top: `${responderPos.top}%`, left: `${responderPos.left}%` }}
           className={`absolute z-20 w-10 h-10 -ml-5 -mt-5 rounded-full border-2 bg-white shadow-xl flex items-center justify-center transition-all duration-1000 ease-out pointer-events-none ${
             isLayer3 ? "border-amber-500" : isLayer2 ? "border-indigo-500" : "border-blue-500"
           }`}
@@ -532,7 +652,7 @@ function SosReceiverPage() {
               </span>
               <span
                 className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${
-                  isLayer3 ? "text-amber-700 bg-amber-100" : "text-indigo-650 bg-indigo-100"
+                  isLayer3 ? "text-amber-700 bg-amber-100" : "text-indigo-600 bg-indigo-100"
                 }`}
               >
                 {isLayer3 ? "Layer 3" : "Layer 2"} Alert
@@ -549,7 +669,7 @@ function SosReceiverPage() {
                     className={`font-bold text-gray-900 text-sm flex items-center gap-1.5 ${isLayer3 ? "text-amber-950" : isLayer2 ? "text-indigo-955" : ""}`}
                   >
                     <span
-                      className={`w-2.5 h-2.5 rounded-full animate-pulse ${isLayer3 ? "bg-amber-500" : isLayer2 ? "bg-indigo-600" : "bg-blue-650"}`}
+                      className={`w-2.5 h-2.5 rounded-full animate-pulse ${isLayer3 ? "bg-amber-500" : isLayer2 ? "bg-indigo-600" : "bg-blue-600"}`}
                     ></span>
                     En Route to Priya
                   </h3>
@@ -559,7 +679,7 @@ function SosReceiverPage() {
                 </div>
                 <div className="text-right">
                   <span
-                    className={`text-xs font-bold block ${isLayer3 ? "text-amber-700" : isLayer2 ? "text-indigo-700" : "text-blue-650"}`}
+                    className={`text-xs font-bold block ${isLayer3 ? "text-amber-700" : isLayer2 ? "text-indigo-700" : "text-blue-600"}`}
                   >
                     ETA: {eta} mins
                   </span>
@@ -618,7 +738,7 @@ function SosReceiverPage() {
               <div className="flex gap-2.5 mt-1">
                 <button
                   onClick={() => setReceiverState("alert")}
-                  className="flex-1 py-3 border border-red-200 hover:bg-red-50 text-red-650 text-xs font-bold rounded-xl transition flex justify-center items-center gap-1.5"
+                  className="flex-1 py-3 border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold rounded-xl transition flex justify-center items-center gap-1.5"
                 >
                   <span className="material-symbols-outlined text-sm">cancel</span>
                   Abort Response
@@ -682,7 +802,7 @@ function SosReceiverPage() {
                 {(isLayer2 || isLayer3) && (
                   <button
                     onClick={handleDeclineRequest}
-                    className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 text-red-650 hover:text-red-750 font-bold text-xs py-3.5 rounded-xl transition active:scale-[0.98] flex justify-center items-center gap-1"
+                    className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 text-red-600 hover:text-red-700 font-bold text-xs py-3.5 rounded-xl transition active:scale-[0.98] flex justify-center items-center gap-1"
                   >
                     <span className="material-symbols-outlined text-xs">close</span>I cannot help
                   </button>

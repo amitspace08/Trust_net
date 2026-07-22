@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "../lib/auth";
+import { stopSharing, updateMyLocation } from "../services/locationService";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -38,10 +39,31 @@ function ProfilePage() {
     }
   }, []);
 
-  const toggleLocationSharing = () => {
+  const toggleLocationSharing = async () => {
     const next = !sharingLocation;
     setSharingLocation(next);
     localStorage.setItem("trustnet_location_sharing", String(next));
+    if (user) {
+      try {
+        if (!next) {
+          await stopSharing(user.id);
+        } else {
+          navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              await updateMyLocation(user.id, pos.coords.latitude, pos.coords.longitude);
+            },
+            async (err) => {
+              console.warn("Unable to get current position for toggle, writing default:", err);
+              await updateMyLocation(user.id, 28.6139, 77.209);
+            }
+          );
+        }
+      } catch (error) {
+        console.error("Unable to update location sharing", error);
+        setSharingLocation(!next);
+        localStorage.setItem("trustnet_location_sharing", String(!next));
+      }
+    }
   };
 
   return (

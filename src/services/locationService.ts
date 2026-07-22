@@ -1,8 +1,10 @@
 import {
   collection,
+  deleteDoc,
   doc,
   GeoPoint,
   getDocs,
+  onSnapshot,
   query,
   serverTimestamp,
   setDoc,
@@ -59,6 +61,9 @@ export async function stopSharing(uid: string) {
       {
         sharingEnabled: false,
         available: false,
+        geopoint: null,
+        latitude: null,
+        longitude: null,
         timestamp: serverTimestamp(),
       },
       { merge: true },
@@ -67,6 +72,44 @@ export async function stopSharing(uid: string) {
     console.error(err);
     throw err;
   }
+}
+
+/**
+ * SOS locations are deliberately isolated from normal location sharing.  This lets
+ * responders subscribe to a short-lived emergency feed without treating a user's
+ * everyday location document as an SOS feed.
+ */
+export async function updateLiveSOSLocation(
+  sessionId: string,
+  uid: string,
+  lat: number,
+  lng: number,
+) {
+  await setDoc(
+    doc(db, "live_locations", sessionId),
+    {
+      sessionId,
+      uid,
+      geopoint: new GeoPoint(lat, lng),
+      latitude: lat,
+      longitude: lng,
+      timestamp: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+export function subscribeToLiveSOSLocation(
+  sessionId: string,
+  callback: (location: any | null) => void,
+) {
+  return onSnapshot(doc(db, "live_locations", sessionId), (snapshot) => {
+    callback(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null);
+  });
+}
+
+export async function clearLiveSOSLocation(sessionId: string) {
+  await deleteDoc(doc(db, "live_locations", sessionId));
 }
 
 // ===============================

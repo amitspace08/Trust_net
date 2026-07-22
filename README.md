@@ -2,6 +2,12 @@
 
 TrustNet is a modern, responsive, and privacy-first personal safety web application. It implements a multi-layered peer-to-peer safety network, community safe spaces, and dynamic crowdsourced area safety ratings designed to protect individuals in high-risk scenarios and daily commutes.
 
+## Browser delivery limitations
+
+TrustNet is a web application. While it uses `navigator.geolocation` for live tracking while the tab is open, browsers may suspend timers and geolocation when the device is locked, the tab is backgrounded, or battery-saving is enabled. Native Expo background-location requirements therefore cannot be guaranteed in this codebase. SOS location writes should be treated as foreground/PWA best effort.
+
+Firestore notification documents and the Web Notifications API are implemented as an in-app/foreground fallback. Reliable delivery while the browser is closed requires configuring Firebase Cloud Messaging web push, a service worker, and a VAPID key in the Firebase console.
+
 ---
 
 ## 🚀 Key System Features (Frontend Complete)

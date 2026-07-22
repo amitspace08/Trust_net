@@ -1,8 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { loadContacts, Contact, getLayer2Candidates, Layer2Candidate } from "../lib/contacts-db";
-import { triggerSOS, cancelSOS } from "../services/sosService";
-import { sendSOSNotification } from "../services/notificationService";
+import { triggerLayer2, triggerSOS, endSOS } from "../services/sosService";
 import {
   collection,
   getDocs,
@@ -12,10 +11,14 @@ import {
   onSnapshot,
   getDoc,
   updateDoc,
+  GeoPoint,
 } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { triggerLayer3, updateGuardianRating, getDistance } from "../services/guardianService";
 import { getNearestSafeSpace } from "../services/safeSpaceService";
+import { updateLiveSOSLocation } from "../services/locationService";
+import { useAuth } from "../lib/auth";
+import { GoogleMap, Marker, Circle, Polyline, useJsApiLoader } from "@react-google-maps/api";
 
 // Helper to compute percentage positions relative to center for mock map rendering
 const getRelativePercent = (lat: number, lng: number, centerLat: number, centerLng: number) => {
@@ -39,11 +42,19 @@ export const Route = createFileRoute("/sos")({
 
 function SosEmergencyPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: "AIzaSyAyqOvmQjDAp7Mwi5CYUUiSNrjqd5kyuEk",
+  });
+  const [sessionId, setSessionId] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : localStorage.getItem("trustnet_active_sos_session"),
+  );
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Get location when component mounts
+  // Get location when component mounts (continuous tracking)
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
+    if (!navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
       (position) => {
         setLocation({
           lat: position.coords.latitude,
@@ -52,11 +63,13 @@ function SosEmergencyPage() {
       },
       (err) => {
         console.error("Error getting location:", err);
-        // Fallback Delhi default
-        setLocation({ lat: 28.6139, lng: 77.209 });
+        setLocation((prev) => prev || { lat: 28.6139, lng: 77.209 });
       },
-      { enableHighAccuracy: true, timeout: 8000 },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
     );
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
   }, []);
 
   const [activeState, setActiveState] = useState<
@@ -66,9 +79,9 @@ function SosEmergencyPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [layer2Contacts, setLayer2Contacts] = useState<Layer2Candidate[]>([]);
 
-  // Dynamic timeouts (L1 -> 90s, L2 -> 120s)
+  // Dynamic timeouts (L1 -> 90s, L2 -> 90s)
   const [escalationTime, setEscalationTime] = useState(90);
-  const [layer3EscalationTime, setLayer3EscalationTime] = useState(120);
+  const [layer3EscalationTime, setLayer3EscalationTime] = useState(90);
 
   const [isLayer2Escalated, setIsLayer2Escalated] = useState(false);
   const [isLayer3Escalated, setIsLayer3Escalated] = useState(false);
@@ -92,6 +105,7 @@ function SosEmergencyPage() {
   // Post-SOS GA rating states
   const [gaRating, setGaRating] = useState<number | null>(null);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [gaSecondsLeft, setGaSecondsLeft] = useState(60);
 
   // Load contacts lists
   useEffect(() => {
@@ -99,9 +113,10 @@ function SosEmergencyPage() {
     setLayer2Contacts(getLayer2Candidates());
   }, []);
 
-  // Real-time listener for the active Firestore SOS session
+  // Real-time listener for this SOS session (never a shared demo document).
   useEffect(() => {
-    const sessionRef = doc(db, "sos_sessions", "amit123");
+    if (!sessionId) return;
+    const sessionRef = doc(db, "sos_sessions", sessionId);
     const unsubscribe = onSnapshot(sessionRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -128,11 +143,45 @@ function SosEmergencyPage() {
         if (data.layer3Exhausted !== undefined) {
           setLayer3Exhausted(data.layer3Exhausted);
         }
+      } else {
+        localStorage.removeItem("trustnet_active_sos_session");
+        localStorage.removeItem("trustnet_sos_state");
+        setIsSafeEnded(true);
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [sessionId]);
+
+  // Browser best-effort SOS tracking with background/battery-saving support
+  useEffect(() => {
+    if (!sessionId || !user || !location || activeState === "countdown" || isSafeEnded) return;
+
+    let intervalId: number;
+
+    const startPublishInterval = () => {
+      const isBackground = document.visibilityState === "hidden";
+      const intervalMs = isBackground ? 10_000 : 5_000; // 10s in background, 5s in foreground
+      const publish = () =>
+        updateLiveSOSLocation(sessionId, user.id, location.lat, location.lng).catch(console.error);
+
+      publish();
+      intervalId = window.setInterval(publish, intervalMs);
+    };
+
+    const handleVisibilityChange = () => {
+      if (intervalId) window.clearInterval(intervalId);
+      startPublishInterval();
+    };
+
+    startPublishInterval();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      if (intervalId) window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [activeState, isSafeEnded, location, sessionId, user]);
 
   // Fetch coordinates of alerted GAs to render gold pins
   useEffect(() => {
@@ -220,6 +269,26 @@ function SosEmergencyPage() {
     return () => clearTimeout(timer);
   }, [layer3EscalationTime, isLayer2Escalated, isLayer3Escalated, responderName]);
 
+  // Layer 3 GA sequential timer countdown (60s per candidate)
+  useEffect(() => {
+    if (!isLayer3Escalated || isSafeEnded || responderName) return;
+    if (gaSecondsLeft <= 0) {
+      setGaSecondsLeft(60);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setGaSecondsLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [isLayer3Escalated, isSafeEnded, responderName, gaSecondsLeft]);
+
+  // Reset GA timer when a GA declines (which signals moving to the next GA)
+  useEffect(() => {
+    if (isLayer3Escalated) {
+      setGaSecondsLeft(60);
+    }
+  }, [layer3Declined.length, isLayer3Escalated]);
+
   // L2 searching transition
   useEffect(() => {
     if (activeState !== "l2-searching") return;
@@ -229,25 +298,14 @@ function SosEmergencyPage() {
 
       // Write Layer 2 escalation to Firestore
       try {
-        const userId = "amit123";
-        const l2List = getLayer2Candidates();
-        const l2Uids = l2List.map((c) => c.id);
-
-        await updateDoc(doc(db, "sos_sessions", userId), {
-          layerActive: 2,
-          layer2Alerted: l2Uids,
-          layer2TriggerTime: serverTimestamp(),
-        });
-
-        for (const l2 of l2List) {
-          await sendSOSNotification(userId, l2.id);
-        }
+        if (!sessionId || !location) return;
+        await triggerLayer2(sessionId, new GeoPoint(location.lat, location.lng));
       } catch (err) {
         console.error("Failed to update L2 session:", err);
       }
     }, 4000);
     return () => clearTimeout(timer);
-  }, [activeState]);
+  }, [activeState, location, sessionId]);
 
   // L3 searching transition (Task 1 S4.1)
   useEffect(() => {
@@ -258,14 +316,15 @@ function SosEmergencyPage() {
 
       // Write Layer 3 escalation to Firestore
       try {
-        await triggerLayer3("amit123");
+        if (!sessionId) return;
+        await triggerLayer3(sessionId);
         console.log("Firebase: Escalated to Layer 3");
       } catch (err) {
         console.error("Failed to escalate to Layer 3:", err);
       }
     }, 4000);
     return () => clearTimeout(timer);
-  }, [activeState]);
+  }, [activeState, sessionId]);
 
   // Trigger default L1 on mount when countdown finishes
   useEffect(() => {
@@ -274,26 +333,21 @@ function SosEmergencyPage() {
 
     const triggerL1 = async () => {
       try {
-        const userId = "amit123";
-        await triggerSOS(userId, location?.lat || 28.6139, location?.lng || 77.209);
+        if (!user || sessionId) return;
+        const newSessionId = await triggerSOS(
+          user.id,
+          location?.lat || 28.6139,
+          location?.lng || 77.209,
+        );
+        setSessionId(newSessionId);
+        localStorage.setItem("trustnet_active_sos_session", newSessionId);
         console.log("Firebase: SOS Session Created");
-
-        const snapshot = await getDocs(collection(db, "trust_relationships"));
-        for (const trustDoc of snapshot.docs) {
-          const data = trustDoc.data();
-          if (data.ownerId === userId && data.members) {
-            for (const member of data.members) {
-              await sendSOSNotification(userId, member);
-            }
-            break;
-          }
-        }
       } catch (err) {
         console.error("Firebase L1 trigger failed:", err);
       }
     };
     triggerL1();
-  }, [activeState, location]);
+  }, [activeState, location, sessionId, user]);
 
   // Cleanup safety double-tap timeout
   useEffect(() => {
@@ -321,15 +375,15 @@ function SosEmergencyPage() {
         clearTimeout(confirmTimeoutId);
       }
 
-      // Call Firebase cancelSOS
-      const userId = "amit123";
-      try {
-        await cancelSOS(userId);
-        console.log("Firebase: SOS Cancelled");
-      } catch (err) {
-        console.error("Firebase cancelSOS failed:", err);
+      // Call Firebase endSOS (fire-and-forget to avoid UI blocking)
+      if (sessionId) {
+        endSOS(sessionId).catch((err) => {
+          console.error("Firebase endSOS failed:", err);
+        });
       }
 
+      localStorage.removeItem("trustnet_active_sos_session");
+      localStorage.removeItem("trustnet_sos_state");
       setIsSafeEnded(true);
     }
   };
@@ -387,7 +441,7 @@ function SosEmergencyPage() {
                 ))}
               </div>
               <button
-                onClick={() => handleRatingSubmit()}
+                onClick={() => submitGARating(gaRating!)}
                 disabled={gaRating === null}
                 className={`py-3 rounded-xl font-bold text-xs transition ${
                   gaRating !== null
@@ -593,18 +647,21 @@ function SosEmergencyPage() {
 
   // ── RENDER ACTIVE SOS SCREEN ──
   const getLayerColorClass = () => {
+    if (layer3Exhausted) return "bg-red-700 text-white";
     if (isLayer3Escalated) return "bg-amber-600 text-white";
     if (isLayer2Escalated) return "bg-teal-600 text-white";
-    return "bg-purple-650 text-white";
+    return "bg-purple-600 text-white";
   };
 
   const getLayerBorderClass = () => {
+    if (layer3Exhausted) return "border-red-500";
     if (isLayer3Escalated) return "border-amber-400";
     if (isLayer2Escalated) return "border-teal-400";
     return "border-purple-400";
   };
 
   const getLayerTitle = () => {
+    if (layer3Exhausted) return "Layer 4: Direct Police Alerted";
     if (isLayer3Escalated) return "Layer 3: Guardian Angels Alerted";
     if (isLayer2Escalated) return "Layer 2: Friends-of-Friends Alerted";
     return "Layer 1: Direct Contacts Alerted";
@@ -635,55 +692,215 @@ function SosEmergencyPage() {
         </div>
         <span className="text-xs font-black opacity-95 relative z-10">
           {!responderName &&
-            (isLayer3Escalated
-              ? "L3 Active"
-              : isLayer2Escalated
-                ? `${layer3EscalationTime}s`
-                : `${escalationTime}s`)}
+            (layer3Exhausted
+              ? "L4 Active"
+              : isLayer3Escalated
+                ? `${gaSecondsLeft}s`
+                : isLayer2Escalated
+                  ? `${layer3EscalationTime}s`
+                  : `${escalationTime}s`)}
         </span>
       </div>
 
       {/* 2. Map Canvas area */}
-      <div className="flex-grow w-full relative overflow-hidden bg-gray-100 flex flex-col justify-center items-center">
-        {/* Mock Map Image */}
-        <div className="absolute inset-0 w-full h-full">
-          <img
-            alt="Safety Map Grid"
-            className="w-full h-full object-cover brightness-[0.8] contrast-[1.05] grayscale-[0.1]"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCc5fg68OpWf72lAUfE0tDH7yk9rYFKbMyj79SG0VknavzL2u6XozKcTTGrgiBlqtSI330GAhhThg2uh3HVCn09EcagPMNkvsLA1xSzhrW17M0gDS88RkxYEMFHHjeLCEeOA73T4OY6-iuZ85rg81lDb4kUydqvnYIdfY2KbZQ8zoRNubvbGyuifD01nbH65Fq-yYh9vAFmiPtG2XbpURPKyCbzU9DK4DOhvU1HJOkbmTH_TGeUSb2nkl7jlSzb8-9R2pHg35gk0CvS"
-          />
-        </div>
-
-        {/* Coverage Radius Circle (Task 1 S3.4) */}
-        {isLayer3Escalated ? (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-52 h-52 rounded-full border-2 border-dashed border-amber-400 bg-amber-400/5 animate-pulse pointer-events-none z-10" />
-        ) : isLayer2Escalated ? (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full border-2 border-dashed border-teal-400 bg-teal-400/5 animate-pulse pointer-events-none z-10" />
-        ) : (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border-2 border-dashed border-purple-400 bg-purple-400/5 animate-pulse pointer-events-none z-10" />
-        )}
-
-        {/* SVG Route Lines */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
-          {/* Nearest Safe Space dashed green route */}
-          {nearestSpace && (
-            <line
-              x1="50%"
-              y1="50%"
-              x2={spacePos.left}
-              y2={spacePos.top}
-              stroke="#10b981"
-              strokeWidth="2.5"
-              strokeDasharray="4 4"
-              className="animate-pulse"
+      <div className="flex-grow w-full relative overflow-hidden bg-gray-100 flex flex-col justify-center items-center h-[350px]">
+        {isLoaded && location ? (
+          <GoogleMap
+            center={location}
+            zoom={15}
+            mapContainerStyle={{
+              width: "100%",
+              height: "100%",
+              position: "absolute",
+              top: 0,
+              left: 0,
+            }}
+            options={{
+              disableDefaultUI: true,
+              zoomControl: false,
+            }}
+          >
+            {/* Live User Marker */}
+            <Marker
+              position={location}
+              label={{
+                text: "Priya (You)",
+                color: "#ffffff",
+                fontWeight: "800",
+              }}
+              icon={{
+                url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+              }}
             />
-          )}
 
-          {/* Active Blue Responder route line */}
-          {responderName && (
-            <line x1="50%" y1="50%" x2="70%" y2="30%" stroke="#2563eb" strokeWidth="3.5" />
-          )}
-        </svg>
+            {/* Coverage radius circle representing active SOS boundary */}
+            {isLayer3Escalated ? (
+              <Circle
+                center={location}
+                radius={300}
+                options={{
+                  strokeColor: "#f59e0b",
+                  strokeOpacity: 0.8,
+                  strokeWeight: 2,
+                  fillColor: "#f59e0b",
+                  fillOpacity: 0.05,
+                  clickable: false,
+                }}
+              />
+            ) : isLayer2Escalated ? (
+              <Circle
+                center={location}
+                radius={200}
+                options={{
+                  strokeColor: "#0d9488",
+                  strokeOpacity: 0.8,
+                  strokeWeight: 2,
+                  fillColor: "#0d9488",
+                  fillOpacity: 0.05,
+                  clickable: false,
+                }}
+              />
+            ) : (
+              <Circle
+                center={location}
+                radius={100}
+                options={{
+                  strokeColor: "#8b5cf6",
+                  strokeOpacity: 0.8,
+                  strokeWeight: 2,
+                  fillColor: "#8b5cf6",
+                  fillOpacity: 0.05,
+                  clickable: false,
+                }}
+              />
+            )}
+
+            {/* Nearest Safe Space Pin */}
+            {nearestSpace && (
+              <Marker
+                position={{ lat: nearestSpace.latitude, lng: nearestSpace.longitude }}
+                label={{
+                  text: `Safe Space: ${nearestSpace.name}`,
+                  color: "#047857",
+                  fontWeight: "700",
+                }}
+                icon={{
+                  url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+                }}
+              />
+            )}
+
+            {/* Dashed line to Nearest Safe Space */}
+            {nearestSpace && (
+              <Polyline
+                path={[
+                  location,
+                  { lat: nearestSpace.latitude, lng: nearestSpace.longitude },
+                ]}
+                options={{
+                  strokeColor: "#10b981",
+                  strokeOpacity: 0,
+                  strokeWeight: 3.5,
+                  icons: [
+                    {
+                      icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 3 },
+                      offset: "0",
+                      repeat: "15px",
+                    },
+                  ],
+                }}
+              />
+            )}
+
+            {/* Layer 2 Candidate Mock Pins */}
+            {isLayer2Escalated && !isLayer3Escalated && !responderName && (
+              <>
+                <Marker
+                  position={{ lat: location.lat + 0.002, lng: location.lng + 0.002 }}
+                  label={{
+                    text: "Layer 2 — Rahul",
+                    color: "#0f766e",
+                    fontWeight: "600",
+                  }}
+                  icon={{
+                    url: "https://maps.google.com/mapfiles/ms/icons/ltblue-dot.png",
+                  }}
+                />
+                <Marker
+                  position={{ lat: location.lat - 0.002, lng: location.lng - 0.002 }}
+                  label={{
+                    text: "Layer 2 — Dev",
+                    color: "#0f766e",
+                    fontWeight: "600",
+                  }}
+                  icon={{
+                    url: "https://maps.google.com/mapfiles/ms/icons/ltblue-dot.png",
+                  }}
+                />
+              </>
+            )}
+
+            {/* Guardian Angel Pins */}
+            {isLayer3Escalated &&
+              gaLocations.map((ga) => {
+                const isDeclined = layer3Declined.includes(ga.uid);
+                const isActiveCandidate =
+                  !isDeclined &&
+                  layer3Alerted.find((uid) => !layer3Declined.includes(uid)) === ga.uid;
+
+                return (
+                  <Marker
+                    key={ga.uid}
+                    position={{ lat: ga.latitude, lng: ga.longitude }}
+                    label={{
+                      text: `GA — ${ga.name}${isDeclined ? " (No Response)" : ""}`,
+                      color: isDeclined ? "#6b7280" : "#d97706",
+                      fontWeight: "700",
+                    }}
+                    icon={{
+                      url: isDeclined
+                        ? "https://maps.google.com/mapfiles/ms/icons/grey-dot.png"
+                        : isActiveCandidate
+                          ? "https://maps.google.com/mapfiles/ms/icons/orange-dot.png"
+                          : "https://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
+                    }}
+                  />
+                );
+              })}
+
+            {/* Responding Helper route and Pin */}
+            {responderName && gaLocations.length > 0 && (
+              <>
+                <Polyline
+                  path={[
+                    location,
+                    { lat: gaLocations[0].latitude, lng: gaLocations[0].longitude },
+                  ]}
+                  options={{
+                    strokeColor: "#3b82f6",
+                    strokeOpacity: 0.9,
+                    strokeWeight: 4,
+                  }}
+                />
+                <Marker
+                  position={{ lat: gaLocations[0].latitude, lng: gaLocations[0].longitude }}
+                  label={{
+                    text: `${responderName} (Responding!)`,
+                    color: "#1d4ed8",
+                    fontWeight: "800",
+                  }}
+                  icon={{
+                    url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                  }}
+                />
+              </>
+            )}
+          </GoogleMap>
+        ) : (
+          <div className="w-full h-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 animate-pulse">
+            Loading Live Map...
+          </div>
+        )}
 
         {/* Live HUD indicator */}
         <div
@@ -692,130 +909,6 @@ function SosEmergencyPage() {
           <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping mr-1 inline-block"></span>
           Live GPS Broadcast
         </div>
-
-        {/* Distressed User Center Pin */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none z-20">
-          <div className="bg-white/95 border border-gray-150 px-2 py-0.5 rounded shadow text-[8px] font-black text-gray-800 -mt-7 absolute whitespace-nowrap">
-            Priya (You)
-          </div>
-          <div
-            className={`w-10 h-10 rounded-full border-2 flex items-center justify-center animate-pulse ${getLayerBorderClass()} bg-white/20`}
-          >
-            <div
-              className={`w-3.5 h-3.5 rounded-full shadow border-2 border-white ${isLayer3Escalated ? "bg-amber-500" : isLayer2Escalated ? "bg-teal-500" : "bg-purple-600"}`}
-            />
-          </div>
-        </div>
-
-        {/* Nearest Safe Space Pin (Pulsing green border - Task 2 S3.2) */}
-        {nearestSpace && (
-          <div
-            style={{ top: spacePos.top, left: spacePos.left }}
-            className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20 transition-all duration-300"
-          >
-            <div className="bg-white border border-emerald-250 px-2 py-0.5 rounded shadow text-[8px] font-bold text-emerald-800 -mt-7 absolute whitespace-nowrap">
-              Safe Space: {nearestSpace.name}
-            </div>
-            <div className="w-7 h-7 rounded-full bg-emerald-600 border-2 border-white shadow-lg flex items-center justify-center animate-pulse ring-4 ring-emerald-500/20">
-              <span
-                className="material-symbols-outlined text-white text-[12px]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                local_pharmacy
-              </span>
-            </div>
-            <div className="w-1.5 h-1.5 bg-emerald-650 rotate-45 -mt-0.5 shadow"></div>
-          </div>
-        )}
-
-        {/* Layer 2 Candidate Pins (Teal) */}
-        {isLayer2Escalated && !isLayer3Escalated && !responderName && (
-          <>
-            <div
-              style={{ top: "30%", left: "70%" }}
-              className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20"
-            >
-              <div className="bg-white border border-teal-200 px-2 py-0.5 rounded shadow text-[8px] font-semibold text-teal-800 -mt-6 absolute whitespace-nowrap">
-                Layer 2 — Rahul
-              </div>
-              <div className="w-5 h-5 rounded-full bg-teal-500 border border-white shadow flex items-center justify-center">
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              </div>
-            </div>
-            <div
-              style={{ top: "60%", left: "40%" }}
-              className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20"
-            >
-              <div className="bg-white border border-teal-200 px-2 py-0.5 rounded shadow text-[8px] font-semibold text-teal-800 -mt-6 absolute whitespace-nowrap">
-                Layer 2 — Dev
-              </div>
-              <div className="w-5 h-5 rounded-full bg-teal-500 border border-white shadow flex items-center justify-center">
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Dynamic Alerted Guardian Angel pins with fades (Task 1 S3.4, S3.5) */}
-        {isLayer3Escalated &&
-          !responderName &&
-          gaLocations.map((ga) => {
-            const pos = getRelativePercent(
-              ga.latitude,
-              ga.longitude,
-              location?.lat || 28.6139,
-              location?.lng || 77.209,
-            );
-            const isDeclined = layer3Declined.includes(ga.uid);
-
-            // Current active alerted candidate (the first who has not declined yet)
-            const isActiveCandidate =
-              !isDeclined && layer3Alerted.find((uid) => !layer3Declined.includes(uid)) === ga.uid;
-
-            return (
-              <div
-                key={ga.uid}
-                style={{ top: pos.top, left: pos.left }}
-                className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20 transition-all duration-500"
-              >
-                <div className="bg-white border border-amber-200 px-2 py-0.5 rounded shadow text-[8px] font-semibold text-amber-800 -mt-6 absolute whitespace-nowrap">
-                  GA — {ga.name} {isDeclined ? "(No Response)" : ""}
-                </div>
-                <div
-                  className={`w-6 h-6 rounded-full border border-white shadow flex items-center justify-center transition-all ${
-                    isDeclined
-                      ? "bg-gray-400 opacity-40 scale-90"
-                      : isActiveCandidate
-                        ? "bg-amber-500 scale-110 animate-pulse ring-4 ring-amber-500/20"
-                        : "bg-amber-300 opacity-60"
-                  }`}
-                >
-                  <span
-                    className="material-symbols-outlined text-white text-[11px]"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
-                    security
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-
-        {/* Responding Helper (Blue Pin) */}
-        {responderName && (
-          <div
-            style={{ top: "30%", left: "70%" }}
-            className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-20 animate-bounce"
-          >
-            <div className="bg-blue-600 text-white px-2 py-0.5 rounded shadow-lg text-[8px] font-black -mt-7 absolute whitespace-nowrap leading-none border border-blue-400">
-              {responderName} is responding!
-            </div>
-            <div className="w-8 h-8 rounded-full bg-blue-600 border-2 border-white shadow-xl flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-sm">directions_run</span>
-            </div>
-            <div className="w-2 h-2 bg-blue-600 rotate-45 -mt-1 shadow"></div>
-          </div>
-        )}
       </div>
 
       {/* 3. Dynamic Footer Card info */}
@@ -847,7 +940,20 @@ function SosEmergencyPage() {
 
         {/* 4-Node Escalation Timeline */}
         <div className="flex justify-between items-center px-4 relative mt-1">
-          <div className="absolute left-6 right-6 top-1/2 h-[3px] bg-gray-200 -translate-y-1/2 z-0" />
+          <div className="absolute left-6 right-6 top-1/2 h-[3px] bg-gray-200 -translate-y-1/2 z-0 overflow-hidden">
+            <div
+              className="h-full bg-purple-600 transition-all duration-1000"
+              style={{
+                width: layer3Exhausted
+                  ? "100%"
+                  : isLayer3Escalated
+                    ? "66%"
+                    : isLayer2Escalated
+                      ? "33%"
+                      : "0%"
+              }}
+            />
+          </div>
 
           {/* L1 Node */}
           <div className="flex flex-col items-center gap-1 z-10">
@@ -897,7 +1003,13 @@ function SosEmergencyPage() {
 
           {/* Police Node */}
           <div className="flex flex-col items-center gap-1 z-10">
-            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 bg-gray-100 border-gray-300 text-gray-400">
+            <div
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 ${
+                layer3Exhausted
+                  ? "bg-red-600 border-red-650 text-white animate-pulse"
+                  : "bg-gray-100 border-gray-300 text-gray-400"
+              }`}
+            >
               🚓
             </div>
             <span className="text-[8px] font-black text-gray-400">Police</span>
@@ -959,8 +1071,8 @@ function SosEmergencyPage() {
           onClick={handleEndSosWithDoubleTap}
           className={`w-full font-black py-4 rounded-xl shadow-md transition active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wide text-xs ${
             confirmSafety
-              ? "bg-red-650 hover:bg-red-750 text-white border-2 border-red-500 animate-pulse"
-              : "bg-gray-100 hover:bg-gray-150 text-gray-700 border border-gray-200"
+              ? "bg-red-600 hover:bg-red-700 text-white border-2 border-red-500 animate-pulse"
+              : "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200"
           }`}
         >
           <span className="material-symbols-outlined text-base">

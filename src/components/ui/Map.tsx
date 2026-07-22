@@ -1,14 +1,16 @@
-import { updateMyLocation } from "../../services/locationService";
+import { stopSharing, updateMyLocation } from "../../services/locationService";
 import { subscribeToLocations } from "../../services/mapService";
 import { subscribeToSOS } from "../../services/sosService";
 import { findGuardianAngels } from "../../services/guardianService";
 import { getSafeSpacesWithinRadius } from "../../services/safeSpaceService";
 import { getAreaScore, submitRating } from "../../services/safetyRatingService";
 import { getDistance } from "../../services/guardianService";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { subscribeToNotifications } from "../../services/notificationListener";
 import { markNotificationRead } from "../../services/readNotification";
+import { useAuth } from "../../lib/auth";
+import { getLayer1Contacts } from "../../services/trustService";
 
 // Custom SVG path icons for sharp, native vector pins on Google Maps
 const goldShieldIcon = {
@@ -30,12 +32,15 @@ const greenBuildingIcon = {
 };
 
 export default function Map() {
+  const { user } = useAuth();
+  const lastLocationWrite = useRef(0);
   const [center, setCenter] = useState({
     lat: 28.6139,
     lng: 77.209,
   });
 
   const [users, setUsers] = useState<any[]>([]);
+  const [layer1Ids, setLayer1Ids] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [sosUsers, setSosUsers] = useState<any[]>([]);
   const [safeSpaces, setSafeSpaces] = useState<any[]>([]);
@@ -68,29 +73,70 @@ export default function Map() {
       return;
     }
 
-    const watchId = navigator.geolocation.watchPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+    let watchId: number;
+    let isActive = true;
 
-        setCenter({ lat, lng });
+    const startTracking = () => {
+      const isBackground = document.visibilityState === "hidden";
+      watchId = navigator.geolocation.watchPosition(
+        async (position) => {
+          if (!isActive) return;
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
 
-        await updateMyLocation("amit123", lat, lng, true);
-        console.log("Live location updated");
-      },
-      (error) => {
-        console.log("Location error:", error);
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-      },
-    );
+          setCenter({ lat, lng });
+
+          const sharingEnabled = localStorage.getItem("trustnet_location_sharing") !== "false";
+          if (!user) return;
+          if (!sharingEnabled) {
+            await stopSharing(user.id);
+            return;
+          }
+          
+          // Throttling: 120s in background, 30s in foreground
+          const intervalMs = isBackground ? 120_000 : 30_000;
+          if (Date.now() - lastLocationWrite.current >= intervalMs) {
+            lastLocationWrite.current = Date.now();
+            await updateMyLocation(user.id, lat, lng);
+          }
+        },
+        (error) => {
+          console.log("Location error:", error);
+        },
+        {
+          enableHighAccuracy: !isBackground,
+          maximumAge: 0,
+        },
+      );
+    };
+
+    const handleVisibilityChange = () => {
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (isActive) startTracking();
+    };
+
+    startTracking();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      navigator.geolocation.clearWatch(watchId);
+      isActive = false;
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    getLayer1Contacts(user.id)
+      .then((relationships) =>
+        setLayer1Ids(
+          relationships.map((relationship: any) =>
+            relationship.userA === user.id ? relationship.userB : relationship.userA,
+          ),
+        ),
+      )
+      .catch((error) => console.error("Unable to load trusted contacts", error));
+  }, [user]);
 
   // Listen for all users, SOS, notifications
   useEffect(() => {
@@ -102,16 +148,16 @@ export default function Map() {
       setSosUsers(sessions);
     });
 
-    const unsubscribeNotifications = subscribeToNotifications("friend1", (data: any[]) => {
-      setNotifications(data);
-    });
+    const unsubscribeNotifications = user
+      ? subscribeToNotifications(user.id, (data: any[]) => setNotifications(data))
+      : () => {};
 
     return () => {
       unsubscribeLocations();
       unsubscribeSOS();
       unsubscribeNotifications();
     };
-  }, []);
+  }, [user]);
 
   // Fetch Safe Spaces and Guardians dynamically based on Center
   useEffect(() => {
@@ -164,7 +210,8 @@ export default function Map() {
     if (newScore === null) return;
     setRatingError(null);
     try {
-      await submitRating("amit123", center.lat, center.lng, newScore, newTags);
+      if (!user) throw new Error("Sign in to submit a rating");
+      await submitRating(user.id, center.lat, center.lng, newScore, newTags);
 
       setRatingSuccess(true);
       setShowRateModal(false);
@@ -202,7 +249,7 @@ export default function Map() {
     if (!areaScore || areaScore.ratingCount < 3) return "bg-gray-400";
     if (areaScore.score >= 7) return "bg-green-600";
     if (areaScore.score >= 4) return "bg-amber-500";
-    return "bg-red-650";
+    return "bg-red-600";
   };
 
   return (
@@ -215,23 +262,45 @@ export default function Map() {
           height: "500px",
         }}
       >
+        {/* Current user marker */}
+        <Marker
+          position={center}
+          label={{ text: "You", color: "#ffffff", fontWeight: "700" }}
+          icon={{ url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png" }}
+        />
         {/* Normal User Markers */}
         {users
           .filter(
-            (user) =>
-              user.id !== "amit123" && // don't render self marker double
-              typeof user.latitude === "number" &&
-              typeof user.longitude === "number",
+            (u) =>
+              u.id !== user?.id &&
+              layer1Ids.includes(u.id) &&
+              u.sharingEnabled !== false &&
+              typeof u.latitude === "number" &&
+              typeof u.longitude === "number",
           )
-          .map((user) => (
-            <Marker
-              key={user.id}
-              position={{
-                lat: user.latitude,
-                lng: user.longitude,
-              }}
-            />
-          ))}
+          .map((u) => {
+            const lastActive = u.timestamp?.toDate ? u.timestamp.toDate().getTime() : (u.timestamp?.seconds ? u.timestamp.seconds * 1000 : Date.now());
+            const isStale = Date.now() - lastActive > 3_600_000;
+            return (
+              <Marker
+                key={u.id}
+                position={{
+                  lat: u.latitude,
+                  lng: u.longitude,
+                }}
+                label={{
+                  text: u.name || "Contact",
+                  color: isStale ? "#6b7280" : "#1e3a8a",
+                  fontWeight: "600",
+                }}
+                icon={{
+                  url: isStale
+                    ? "https://maps.google.com/mapfiles/ms/icons/grey-dot.png"
+                    : "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                }}
+              />
+            );
+          })}
 
         {/* SOS User Markers */}
         {sosUsers
@@ -407,7 +476,7 @@ export default function Map() {
             </p>
 
             {ratingError && (
-              <div className="text-[10px] font-bold text-red-650 bg-red-50 p-2.5 rounded-xl">
+              <div className="text-[10px] font-bold text-red-600 bg-red-50 p-2.5 rounded-xl">
                 {ratingError}
               </div>
             )}

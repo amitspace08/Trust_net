@@ -2,14 +2,23 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isSessionParticipant(session) {
+      return signedIn() && (
+        request.auth.uid == session.triggeredBy ||
+        request.auth.uid in session.layer1Alerted ||
+        request.auth.uid in session.layer2Alerted ||
+        request.auth.uid in session.layer3Alerted
+      );
+    }
 
     // ===========================
     // Users
     // ===========================
     match /users/{userId} {
 
-      allow read, write: if request.auth != null
-      && request.auth.uid == userId;
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == userId;
 
     }
 
@@ -18,7 +27,7 @@ service cloud.firestore {
     // ===========================
     match /trust_relationships/{requestId} {
 
-      allow read, write: if request.auth != null;
+      allow read, write: if signedIn();
 
     }
 
@@ -27,9 +36,9 @@ service cloud.firestore {
     // ===========================
     match /user_locations/{uid} {
 
-      allow read: if request.auth != null;
+      allow read: if signedIn();
 
-      allow write: if request.auth != null
+      allow write: if signedIn()
       && request.auth.uid == uid;
 
     }
@@ -39,12 +48,18 @@ service cloud.firestore {
     // ===========================
     match /sos_sessions/{sessionId} {
 
-      allow read, write: if request.auth != null;
+      allow create: if signedIn() && request.auth.uid == request.resource.data.triggeredBy;
+      allow read: if isSessionParticipant(resource.data);
+      // The owner can cancel/end. Alerted recipients can only participate in
+      // their session; field-level validation belongs in a trusted backend.
+      allow update: if isSessionParticipant(resource.data);
 
       // Responders Subcollection
       match /responders/{uid} {
 
-        allow read, write: if request.auth != null;
+        allow read, write: if isSessionParticipant(
+          get(/databases/$(database)/documents/sos_sessions/$(sessionId)).data
+        );
 
       }
 
@@ -55,7 +70,7 @@ service cloud.firestore {
     // ===========================
     match /sos_history/{sessionId} {
 
-      allow read, write: if request.auth != null;
+      allow read: if signedIn() && resource.data.triggeredBy == request.auth.uid;
 
     }
 
@@ -64,7 +79,8 @@ service cloud.firestore {
     // ===========================
     match /notifications/{notificationId} {
 
-      allow read, write: if request.auth != null;
+      allow create: if signedIn();
+      allow read, update: if signedIn() && resource.data.receiverUID == request.auth.uid;
 
     }
 
@@ -72,8 +88,38 @@ service cloud.firestore {
     // Active Layer 2 Alerts
     // ===========================
     match /active_layer2_alerts/{alertId} {
+      allow read: if signedIn() && (
+        resource.data.receiverUID == request.auth.uid ||
+        get(/databases/$(database)/documents/sos_sessions/$(resource.data.sessionId)).data.triggeredBy == request.auth.uid
+      );
+      allow create: if signedIn() && (
+        request.resource.data.receiverUID == request.auth.uid ||
+        get(/databases/$(database)/documents/sos_sessions/$(request.resource.data.sessionId)).data.triggeredBy == request.auth.uid
+      );
+      allow update, delete: if signedIn() && (
+        resource.data.receiverUID == request.auth.uid ||
+        get(/databases/$(database)/documents/sos_sessions/$(resource.data.sessionId)).data.triggeredBy == request.auth.uid
+      );
+    }
 
-      allow read, write: if request.auth != null;
+    match /live_locations/{sessionId} {
+      allow read: if isSessionParticipant(
+        get(/databases/$(database)/documents/sos_sessions/$(sessionId)).data
+      );
+      allow write: if signedIn() &&
+        get(/databases/$(database)/documents/sos_sessions/$(sessionId)).data.triggeredBy == request.auth.uid;
+    }
+
+    match /safe_spaces/{spaceId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if signedIn() && request.auth.uid == resource.data.createdBy;
+    }
+
+    match /safety_ratings/{ratingId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.uid == request.auth.uid;
 
     }
 

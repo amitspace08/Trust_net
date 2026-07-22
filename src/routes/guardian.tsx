@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { registerAsGuardianAngel, setGuardianAvailability } from "../services/guardianService";
+import { auth } from "../firebase/firebase";
 
 export const Route = createFileRoute("/guardian")({
   head: () => ({
@@ -44,6 +45,7 @@ function GuardianPage() {
   }, []);
 
   const getUid = () => {
+    if (auth.currentUser) return auth.currentUser.uid;
     try {
       const raw = localStorage.getItem("trustnet_auth_user");
       if (raw) {
